@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"$CLAUDE_PROJECT_DIR\" && printf '## GAITR session anchor\\n- Branch: %s\\n- Last commit: %s\\n- Working tree: %s changed file(s)\\n- Latest ADR: %s\\n- Critique: docs/critique/CRITIQUE.md | Spec: docs/spec/extracted.md\\n' \"$(git branch --show-current 2>/dev/null || echo n/a)\" \"$(git log -1 --oneline 2>/dev/null || echo none)\" \"$(git status --short 2>/dev/null | wc -l | tr -d ' ')\" \"$(ls -1 docs/decisions/ 2>/dev/null | tail -1 || echo none)\""
+          }
+        ]
+      }
+    ]
+  }
+}
