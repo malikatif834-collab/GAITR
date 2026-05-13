@@ -10,6 +10,7 @@
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:seed": "tsx --env-file=.env.local lib/db/seed.ts",
+    "db:seed:remote": "tsx lib/db/seed.ts",
     "test": "vitest run"
   },
   "dependencies": {

@@ -6,6 +6,7 @@ SAIF-mapped threat scenario with a full decision-record audit trail.
 
 - **Design**: [`docs/decisions/0002-alchemy-engine-slice.md`](../../docs/decisions/0002-alchemy-engine-slice.md)
 - **Critique it answers**: [`docs/critique/CRITIQUE.md`](../../docs/critique/CRITIQUE.md) — clusters A (adversarial), B (audit/explainability), C (provider abstraction), F (matcher candidate generation)
+- **Deploy**: [`DEPLOY.md`](./DEPLOY.md) — Vercel + Neon recipe
 
 ## Stack
 
