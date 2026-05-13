@@ -24,16 +24,25 @@ Replit version is acceptable.
 | `docs/spec/extracted.md` | Plain-text extraction of the spec — grep-able, line-citable |
 | `docs/critique/CRITIQUE.md` | 8-cluster design critique with prioritized backlog |
 | `docs/decisions/NNNN-*.md` | Architecture Decision Records (ADRs) — one per non-trivial choice |
+| `apps/alchemy/` | **Alchemy Engine v0.1** — Next.js 16 app implementing the synergy synthesis slice |
+| `apps/alchemy/README.md` | Run instructions for the Alchemy Engine |
+| `apps/alchemy/lib/alchemy/` | Matcher + synthesizer + provider abstraction + versioned prompts |
+| `apps/alchemy/lib/db/` | Drizzle schema (5 tables incl. `decision_records` per CRITIQUE.md B1) + seed |
 | `.claude/settings.json` | Hooks: SessionStart prints branch + last commit + open todos |
 | `CLAUDE.md` | This file |
 
 ## Current state
 
 - **Branch**: `claude/review-gaitr-file-KK0iC`
-- **Last meaningful artifact**: `docs/critique/CRITIQUE.md` — committed, pushed
-- **Recommended next slice**: Alchemy Engine, clean-room, standalone (capability
-  graph + synergy matcher + scenario LLM + review UI). See `docs/decisions/0001-scope-and-stack.md`.
-- **Not yet built**: any code. Repo is docs-only.
+- **Last meaningful artifact**: Alchemy Engine v0.1 — six-commit clean-room
+  build of the synergy synthesis slice. Stubbed LLM by default; real Sonnet
+  via `ALCHEMY_LLM_PROVIDER=anthropic`. End-to-end working locally.
+- **Critique fixes shipped**: B1 (decision-record audit trail, visible in
+  UI provenance drawer), A1 (structured-output-only synthesizer, no
+  attacker text in prompts), C5 (provider abstraction), F1 (deterministic
+  candidate generation algorithm specified + implemented + tested).
+- **Recommended next**: deploy to Vercel + Neon, run /security-review,
+  then v0.2 (novelty scoring via pgvector + review queue UI).
 
 ## User preferences (durable)
 
