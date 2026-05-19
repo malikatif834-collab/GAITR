@@ -395,11 +395,26 @@ const SYNERGIES: SeedSynergy[] = [
   },
 ];
 
-async function main() {
-  console.log("Seeding %d tools and %d synergies...", TOOLS.length, SYNERGIES.length);
+/**
+ * Seed tools + synergies.
+ *
+ * @param mode "reset" deletes existing rows first (CLI default — clean
+ *             reproducible state). "once" no-ops if any tool exists
+ *             (used by the Vercel build hook so re-deploys don't wipe).
+ */
+export async function seedDatabase(mode: "reset" | "once" = "reset") {
+  if (mode === "once") {
+    const existing = await db.select({ id: aiTools.id }).from(aiTools).limit(1);
+    if (existing.length > 0) {
+      console.log("Seed skipped: %d+ tools already present.", existing.length);
+      return { skipped: true as const };
+    }
+  } else {
+    await db.delete(capabilitySynergies);
+    await db.delete(aiTools);
+  }
 
-  await db.delete(capabilitySynergies);
-  await db.delete(aiTools);
+  console.log("Seeding %d tools and %d synergies...", TOOLS.length, SYNERGIES.length);
 
   await db.insert(aiTools).values(
     TOOLS.map((t) => ({
@@ -425,6 +440,12 @@ async function main() {
   );
 
   console.log("Seed complete.");
+  return { skipped: false as const };
+}
+
+async function main() {
+  const mode = process.argv.includes("--once") ? "once" : "reset";
+  await seedDatabase(mode);
   process.exit(0);
 }
 

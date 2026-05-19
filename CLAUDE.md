@@ -24,10 +24,12 @@ Replit version is acceptable.
 | `docs/spec/extracted.md` | Plain-text extraction of the spec — grep-able, line-citable |
 | `docs/critique/CRITIQUE.md` | 8-cluster design critique with prioritized backlog |
 | `docs/decisions/NNNN-*.md` | Architecture Decision Records (ADRs) — one per non-trivial choice |
-| `apps/alchemy/` | **Alchemy Engine v0.1** — Next.js 16 app implementing the synergy synthesis slice |
-| `apps/alchemy/README.md` | Run instructions for the Alchemy Engine |
-| `apps/alchemy/lib/alchemy/` | Matcher + synthesizer + provider abstraction + versioned prompts |
-| `apps/alchemy/lib/db/` | Drizzle schema (5 tables incl. `decision_records` per CRITIQUE.md B1) + seed |
+| `app/`, `components/`, `lib/`, `drizzle/` | **Alchemy Engine v0.1** — Next.js 16 app at repo root (flattened from `apps/alchemy/` in commit `<flatten-sha>` so Vercel deploys with zero config) |
+| `README.md` | Run instructions for the Alchemy Engine |
+| `DEPLOY.md` | Vercel + Neon deploy recipe + one-click button URL |
+| `lib/alchemy/` | Matcher + synthesizer + provider abstraction + versioned prompts |
+| `lib/db/` | Drizzle schema (5 tables incl. `decision_records` per CRITIQUE.md B1) + seed |
+| `scripts/vercel-build.mjs` | Vercel-only build hook: runs migrate + idempotent seed if `DATABASE_URL` is present, then `next build` |
 | `.claude/settings.json` | Hooks: SessionStart prints branch + last commit + open todos |
 | `CLAUDE.md` | This file |
 
