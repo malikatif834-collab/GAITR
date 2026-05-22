@@ -37,30 +37,35 @@ Replit version is acceptable.
 ## Current state
 
 - **Branch**: `claude/review-gaitr-file-KK0iC`
-- **Last meaningful artifact**: Phase 0 — the design-system foundation
-  (ADR 0003). Four commits: re-tokenized `globals.css` to the Zarori brand
-  palette (lime accent, Okabe-Ito + neon data scales); a sidebar + canvas app
-  shell; `BentoCard` / `BigNumeric` primitives + a glass Button variant; the
-  Alchemy Engine pages rethemed onto the shell. Viz deps and the right stat
-  rail are deferred to Phase 1 (no Phase 0 consumer).
+- **Last meaningful artifact**: Phase 1 — the Command Center (ADR 0003).
+  Five commits: the ADR 0003 D4 viz stack installed (React Flow, D3, visx,
+  Recharts, Motion); the Command Center took the root route and the Alchemy
+  Engine moved to `/alchemy`; the pipeline river — a React Flow hero with SVG
+  particle edges and click-to-drill-in stage nodes; and the KPI strip plus
+  four panels (Intelligence Spotlight, SAIF Threat Landscape — a visx radar,
+  Threat Analytics — a Recharts trend, Orchestrator Status). The right stat
+  rail from ADR 0003's shell sketch stayed deferred: the Command Center
+  surfaces its stats in-page, so the rail has no Phase 1 consumer.
 - **Design state**: ADRs 0001–0004 written. 0001 (scope & stack) and 0002
   (Alchemy Engine slice) document shipped work; **0003 (full-platform 3-tier
   architecture) and 0004 (agent design) are `Accepted`** — signed off by the
   user on 2026-05-22.
 - **Code shipped**: Alchemy Engine v0.1 (synergy-synthesis slice) + Phase 0
-  design system. Stubbed LLM by default; real Sonnet via
-  `ALCHEMY_LLM_PROVIDER=anthropic`. End-to-end working locally (build + 10
-  tests green; synthesis verified against a local Postgres).
+  design system + Phase 1 Command Center. Stubbed LLM by default; real Sonnet
+  via `ALCHEMY_LLM_PROVIDER=anthropic`. End-to-end working locally (build + 10
+  tests green; all routes 200; synthesis verified 201 against a local
+  Postgres).
 - **Critique fixes shipped (in the Engine)**: B1 (decision-record audit trail,
   UI provenance drawer), A1 (structured-output-only synthesizer, no attacker
   text in prompts), C5 (provider abstraction), F1 (deterministic candidate
   generation — specified + implemented + tested).
-- **Recommended next**: Phase 1 — the Command Center (ADR 0003): the pipeline
-  river (React Flow + particle edges), Intelligence Spotlight, SAIF Threat
-  Landscape, Threat Analytics, Orchestrator status. Viz deps install here.
-  **Hard stop for user review after Phase 1.** Ingestion code (Source Registry,
-  connectors, Discovery Scout) follows in Phase 2, behind `/security-review`
-  per CRITIQUE cluster A.
+- **Recommended next**: **Hard stop — user review of Phase 1** (ADR 0003's
+  design-language + hero-viz checkpoint). The user has also asked to hold any
+  deployment until Phase 1 is reviewed — nothing is deployed. After sign-off:
+  Phase 2 — the data model + pipeline backend (the `incidents` / `saif_*` /
+  `agent_runs` tables, the six stages as typed jobs, SAIF corpus + a starter
+  incident seed). Live external ingestion stays deferred to Phase 5 behind
+  `/security-review` per CRITIQUE cluster A.
 
 ## User preferences (durable)
 
