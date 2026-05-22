@@ -2,14 +2,27 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FlaskConical, Sparkles, Layers } from "lucide-react";
+import { FlaskConical, LayoutDashboard, Sparkles, Layers } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /* Only live routes appear here — later interfaces join the nav in the phase
    that ships them (ADR 0003 build plan). */
-const NAV = [
-  { href: "/", label: "Synthesize", icon: Sparkles },
-  { href: "/scenarios", label: "Scenarios", icon: Layers },
+type NavItem = { href: string; label: string; icon: LucideIcon };
+type NavGroup = { label: string; items: NavItem[] };
+
+const NAV: NavGroup[] = [
+  {
+    label: "Overview",
+    items: [{ href: "/", label: "Command Center", icon: LayoutDashboard }],
+  },
+  {
+    label: "Alchemy Engine",
+    items: [
+      { href: "/alchemy", label: "Synthesize", icon: Sparkles },
+      { href: "/scenarios", label: "Scenarios", icon: Layers },
+    ],
+  },
 ];
 
 function isActive(pathname: string, href: string) {
@@ -33,39 +46,43 @@ export function Sidebar() {
         </div>
       </div>
 
-      <nav className="flex-1 space-y-1 px-3 py-4">
-        <p className="px-2 pb-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-          Alchemy Engine
-        </p>
-        {NAV.map(({ href, label, icon: Icon }) => {
-          const active = isActive(pathname, href);
-          return (
-            <Link
-              key={href}
-              href={href}
-              aria-current={active ? "page" : undefined}
-              className={cn(
-                "flex items-center gap-2.5 rounded-md px-3 py-2 text-sm transition-colors",
-                active
-                  ? "bg-secondary text-foreground"
-                  : "text-muted-foreground hover:bg-secondary/50 hover:text-foreground",
-              )}
-            >
-              <Icon
-                className={cn(
-                  "h-4 w-4",
-                  active ? "text-primary" : "text-muted-foreground",
-                )}
-              />
-              {label}
-            </Link>
-          );
-        })}
+      <nav className="flex-1 space-y-5 px-3 py-4">
+        {NAV.map((group) => (
+          <div key={group.label} className="space-y-1">
+            <p className="px-2 pb-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+              {group.label}
+            </p>
+            {group.items.map(({ href, label, icon: Icon }) => {
+              const active = isActive(pathname, href);
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  aria-current={active ? "page" : undefined}
+                  className={cn(
+                    "flex items-center gap-2.5 rounded-md px-3 py-2 text-sm transition-colors",
+                    active
+                      ? "bg-secondary text-foreground"
+                      : "text-muted-foreground hover:bg-secondary/50 hover:text-foreground",
+                  )}
+                >
+                  <Icon
+                    className={cn(
+                      "h-4 w-4",
+                      active ? "text-primary" : "text-muted-foreground",
+                    )}
+                  />
+                  {label}
+                </Link>
+              );
+            })}
+          </div>
+        ))}
       </nav>
 
       <div className="border-t border-border px-5 py-3">
         <p className="font-mono text-[10px] text-muted-foreground">
-          v0.1 · Phase 0
+          v0.1 · Phase 1
         </p>
       </div>
     </aside>

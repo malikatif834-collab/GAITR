@@ -34,7 +34,7 @@ export default async function ScenariosPage() {
       {rows.length === 0 ? (
         <div className="rounded-md border border-dashed border-border p-12 text-center text-sm text-muted-foreground">
           No scenarios yet.{" "}
-          <Link href="/" className="font-medium text-foreground hover:underline">
+          <Link href="/alchemy" className="font-medium text-foreground hover:underline">
             Synthesize your first one →
           </Link>
         </div>
