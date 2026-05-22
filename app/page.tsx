@@ -1,14 +1,16 @@
-import { count } from "drizzle-orm";
-import { db } from "@/lib/db/client";
-import { alchemyScenarios } from "@/lib/db/schema";
+import { getCommandCenterData } from "@/lib/command-center/overview";
+import { KpiStrip } from "@/components/command-center/kpi-strip";
 import { PipelineRiver } from "@/components/command-center/pipeline-river";
+import { IntelligenceSpotlight } from "@/components/command-center/intelligence-spotlight";
+import { SaifThreatLandscape } from "@/components/command-center/saif-threat-landscape";
+import { ThreatAnalytics } from "@/components/command-center/threat-analytics";
+import { OrchestratorStatus } from "@/components/command-center/orchestrator-status";
 
 /* Command Center — the platform overview (ADR 0003 D5, Phase 1). */
 export const dynamic = "force-dynamic";
 
 export default async function CommandCenterPage() {
-  const [row] = await db.select({ value: count() }).from(alchemyScenarios);
-  const scenarioCount = row?.value ?? 0;
+  const data = await getCommandCenterData();
 
   return (
     <div className="mx-auto max-w-7xl space-y-8 px-6 py-10">
@@ -26,7 +28,22 @@ export default async function CommandCenterPage() {
         </p>
       </header>
 
-      <PipelineRiver liveScenarioCount={scenarioCount} />
+      <KpiStrip data={data} />
+
+      <PipelineRiver liveScenarioCount={data.counts.scenarios} />
+
+      <div className="grid gap-4 lg:grid-cols-3">
+        <IntelligenceSpotlight
+          scenarios={data.recentScenarios}
+          className="lg:col-span-2"
+        />
+        <SaifThreatLandscape distribution={data.saifDistribution} />
+        <ThreatAnalytics
+          series={data.scenariosByDay}
+          className="lg:col-span-2"
+        />
+        <OrchestratorStatus />
+      </div>
     </div>
   );
 }
