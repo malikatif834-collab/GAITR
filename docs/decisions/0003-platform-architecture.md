@@ -6,6 +6,10 @@
 - **Supersedes / extends**: ADR 0001 (working mode), ADR 0002 (Alchemy slice).
   ADR 0002's Alchemy Engine becomes the `synthesize` stage of the pipeline
   defined here; nothing in 0002 is discarded.
+- **Amended by**: ADR 0004 (agent design + ingestion model) — rescopes the
+  Agent Operations interface (D5) to a thin page, adds the `source_registry`
+  table, and shifts the per-phase ADR numbers (Phase 3 → ADR 0005, Phase 5 →
+  ADR 0006).
 
 ## Context
 
@@ -140,6 +144,11 @@ delivers the "interactive control panel" feel the user requires.
 | Threat Knowledge Base | D9 | New — Phase 4 |
 | Agent Operations | — | New — Phase 3 |
 
+**Amended by ADR 0004 (D5):** the Agent Operations interface is rescoped from a
+bespoke control panel to a *thin page* — eval scorecard, decision-record
+explainability, operator run-controls. Infra metrics (latency, cost, traces)
+move to the ADR 0001 observability stack, not a bespoke dashboard.
+
 ## Data model additions
 
 The five tables from ADR 0002 stay. New tables, introduced by the phase that
@@ -154,8 +163,10 @@ needs them (full column specs land in each phase's own ADR where non-trivial):
 - `saif_controls` — SAIF reference corpus (6 categories, 10 risk categories);
   reference data for the SAIF Alignment page and `map`-stage RAG.
 - `saif_mappings` — `map` output: threat → control, confidence, decision record.
+- `source_registry` — governed list of ingestion sources; added by ADR 0004
+  (D4). Replaces the spec's hardcoded source strings.
 - `ingestion_events` — raw ingest records with `source_trust` and
-  sanitization flags (CRITIQUE A1 / A3).
+  sanitization flags (CRITIQUE A1 / A3); FK to `source_registry` per ADR 0004.
 - `agent_runs` — stage/orchestrator execution log with idempotency keys
   (CRITIQUE E2).
 - `review_queue` — governance-gate queue for publish-gated items.
@@ -193,8 +204,10 @@ LLM stubbed by default, real via `ALCHEMY_LLM_PROVIDER` (ADR 0002 pattern).
 
 **Phase 3 — Orchestrator + Agent Operations.**
 Tier 1: scheduler + event triggers, stage dispatch, decision records,
-governance-gate routing, eval-metric watch. Agent Operations interface (run
-controls, queue depths, processing metrics). *Own ADR: 0004.*
+governance-gate routing, eval-metric watch. The thin Agent Operations page
+(eval scorecard, decision-record explainability, operator run-controls) per
+ADR 0004 D5; infra metrics go to the ADR 0001 observability stack. *Own ADR:
+0005.*
 
 **Phase 4 — Remaining interfaces.**
 SAIF Alignment, Threat Posture, Threat Knowledge Base, and the Review Queue
@@ -204,7 +217,7 @@ UI for the governance gate.
 Live ingestion behind `/security-review` (SSRF allowlist A2, injection
 sanitization A1, rate limits A3); RBAC enforcement (H1); eval harness +
 scorecard (G2/G3); STIX export + extension-definition (D1/D2); feedback-loop
-closure (G1). *Own ADR: 0005.*
+closure (G1). *Own ADR: 0006.*
 
 ## Alternatives considered
 
@@ -227,7 +240,7 @@ closure (G1). *Own ADR: 0005.*
   the core promise of a *register* (CRITIQUE B1).
 - "Autonomous operation, gated publication" means the Review Queue UI (Phase 4)
   is load-bearing, not optional.
-- Phases 3 and 5 are large enough to warrant their own ADRs (0004, 0005).
+- Phases 3 and 5 are large enough to warrant their own ADRs (0005, 0006).
 - This ADR stays **Proposed** until the user signs off; on sign-off it flips to
   Accepted and Phase 0 begins.
 
@@ -239,4 +252,4 @@ closure (G1). *Own ADR: 0005.*
    the Command Center + pipeline (Phases 0–2) and reassess?
 3. **Orchestrator scheduling** (Phase 3) — Vercel Cron (simplest, serverless)
    or BullMQ + Upstash Redis (richer queue semantics)? Can be deferred to
-   ADR 0004.
+   ADR 0005.
