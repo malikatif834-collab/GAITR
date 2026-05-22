@@ -1,6 +1,6 @@
 # ADR 0004 — Agent design and the ingestion model
 
-- **Status**: Proposed — awaiting user sign-off before any app code
+- **Status**: Accepted — signed off by the user 2026-05-22
 - **Date**: 2026-05-22
 - **Branch**: `claude/review-gaitr-file-KK0iC`
 - **Extends**: ADR 0003 (full-platform architecture). This ADR refines the
@@ -310,8 +310,8 @@ across ADR 0003's existing phases:
 - The three open questions on Scout cadence, registry edit rights, and the
   LLM-trace tool are resolved (2026-05-22) and folded into D4 / D5; only the
   Analyst Console remains deferred.
-- This ADR stays **Proposed** until the user signs off; on sign-off it and
-  ADR 0003 flip to Accepted and Phase 0 begins.
+- **Accepted** by the user on 2026-05-22, together with ADR 0003; Phase 0
+  (design-system foundation) is now unblocked.
 
 ## Open questions for the user
 

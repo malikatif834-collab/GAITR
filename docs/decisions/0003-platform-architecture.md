@@ -1,6 +1,6 @@
 # ADR 0003 — Full-platform architecture and parity build plan
 
-- **Status**: Proposed — awaiting user sign-off before any app code
+- **Status**: Accepted — signed off by the user 2026-05-22
 - **Date**: 2026-05-22
 - **Branch**: `claude/review-gaitr-file-KK0iC`
 - **Supersedes / extends**: ADR 0001 (working mode), ADR 0002 (Alchemy slice).
@@ -241,8 +241,8 @@ closure (G1). *Own ADR: 0006.*
 - "Autonomous operation, gated publication" means the Review Queue UI (Phase 4)
   is load-bearing, not optional.
 - Phases 3 and 5 are large enough to warrant their own ADRs (0005, 0006).
-- This ADR stays **Proposed** until the user signs off; on sign-off it flips to
-  Accepted and Phase 0 begins.
+- **Accepted** by the user on 2026-05-22, together with ADR 0004; Phase 0
+  (design-system foundation) is now unblocked.
 
 ## Open questions for the user
 

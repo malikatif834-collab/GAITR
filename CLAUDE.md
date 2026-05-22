@@ -44,8 +44,8 @@ Replit version is acceptable.
   resolved with the user on 2026-05-22 and folded into D4 / D5.
 - **Design state**: ADRs 0001–0004 written. 0001 (scope & stack) and 0002
   (Alchemy Engine slice) document shipped work; **0003 (full-platform 3-tier
-  architecture) and 0004 (agent design) are `Proposed`, awaiting the user's
-  sign-off**. On sign-off both flip to Accepted and Phase 0 begins.
+  architecture) and 0004 (agent design) are `Accepted`** — signed off by the
+  user on 2026-05-22. Phase 0 is now unblocked.
 - **Code shipped**: Alchemy Engine v0.1 — six-commit clean-room build of the
   synergy-synthesis slice. Stubbed LLM by default; real Sonnet via
   `ALCHEMY_LLM_PROVIDER=anthropic`. End-to-end working locally.
@@ -53,10 +53,10 @@ Replit version is acceptable.
   UI provenance drawer), A1 (structured-output-only synthesizer, no attacker
   text in prompts), C5 (provider abstraction), F1 (deterministic candidate
   generation — specified + implemented + tested).
-- **Recommended next**: the user's sign-off on ADRs 0003 + 0004. On sign-off,
-  Phase 0 (design-system foundation) begins; the ingestion code (Source
-  Registry, connectors, Discovery Scout) lands in Phase 2, behind
-  `/security-review` per CRITIQUE cluster A.
+- **Recommended next**: Phase 0 — the design-system foundation — now unblocked
+  by the 0003 + 0004 sign-off. The ingestion code (Source Registry, connectors,
+  Discovery Scout) follows in Phase 2, behind `/security-review` per CRITIQUE
+  cluster A.
 
 ## User preferences (durable)
 
