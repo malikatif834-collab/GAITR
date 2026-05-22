@@ -15,10 +15,10 @@ export function ConfidenceMeter({
   const pct = Math.max(0, Math.min(1, value)) * 100;
   const tone =
     value < 0.4
-      ? "bg-[#D55E00]"
+      ? "bg-okabe-vermilion"
       : value < 0.7
-        ? "bg-[#E69F00]"
-        : "bg-[#009E73]";
+        ? "bg-okabe-orange"
+        : "bg-okabe-green";
 
   return (
     <div className={cn("space-y-1.5", className)}>

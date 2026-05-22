@@ -1,27 +1,54 @@
 @import "tailwindcss";
 
-/* Dark-by-default SOC theme. Tokens borrowed from shadcn/ui's neutral palette
-   in OKLCH so contrast ratios stay predictable. */
+/* Dark-by-default SOC theme — Zarori brand palette (ADR 0003 D3).
+   Hex is the source of truth: values read from the zarori.ai reference. */
 :root {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
+  /* Core surfaces */
+  --background: #000000;
+  --foreground: #ffffff;
+  --card: #0e0e11;
+  --card-foreground: #ffffff;
+  --popover: #16161a;
+  --popover-foreground: #ffffff;
+
+  /* Lime is the brand/interactive accent ONLY — never a status/data colour
+     (green reads as "safe" in a threat tool). ADR 0003 D3. */
+  --primary: #cdeb47;
+  --primary-foreground: #0a0a0a;
+
+  --secondary: #16161a;
+  --secondary-foreground: #ffffff;
+  --muted: #16161a;
+  --muted-foreground: #8a8a8f;
+  --accent: #16161a;
+  --accent-foreground: #ffffff;
+
+  /* Error semantic — OKLCH red, kept distinct from the data scales below. */
   --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+
+  --border: #222226;
+  --input: #222226;
+  --ring: #cdeb47;
+  --link: #4f8bf5;
+
   --radius: 0.625rem;
+  --radius-bento: 1.5rem;
+
+  /* Okabe-Ito colour-blind-safe palette — carries SAIF-category and
+     severity meaning. Data meaning never rides the lime accent (ADR 0003 D3). */
+  --okabe-blue: #56b4e9;
+  --okabe-green: #009e73;
+  --okabe-yellow: #f0e442;
+  --okabe-orange: #e69f00;
+  --okabe-vermilion: #d55e00;
+  --okabe-purple: #cc79a7;
+
+  /* Neon data palette — chart series (ADR 0003 D3). */
+  --data-cyan: #22d3ee;
+  --data-blue: #60a5fa;
+  --data-violet: #a78bfa;
+  --data-magenta: #e879f9;
+  --data-amber: #fbbf24;
 }
 
 @theme inline {
@@ -43,6 +70,21 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-link: var(--link);
+
+  --color-okabe-blue: var(--okabe-blue);
+  --color-okabe-green: var(--okabe-green);
+  --color-okabe-yellow: var(--okabe-yellow);
+  --color-okabe-orange: var(--okabe-orange);
+  --color-okabe-vermilion: var(--okabe-vermilion);
+  --color-okabe-purple: var(--okabe-purple);
+
+  --color-data-cyan: var(--data-cyan);
+  --color-data-blue: var(--data-blue);
+  --color-data-violet: var(--data-violet);
+  --color-data-magenta: var(--data-magenta);
+  --color-data-amber: var(--data-amber);
+
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
