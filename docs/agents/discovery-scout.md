@@ -7,7 +7,8 @@
 
 ## 1. Identity & role
 
-The Discovery Scout keeps GAITR's ingestion sources current. On a schedule it
+The Discovery Scout keeps GAITR's ingestion sources current. On a configurable
+schedule — an Admin-set cadence, weekly by default (ADR 0004 D4) — it
 researches the AI landscape for new high-signal data sources — places where new
 AI tools and AI-security incidents first surface — and **proposes** them for
 human review. It is the one agent in GAITR that performs deep research, and it

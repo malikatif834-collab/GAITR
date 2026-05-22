@@ -39,10 +39,14 @@ conversational **Analyst Console and its analyst-persona doctrine are
 deferred** to a later ADR, at the user's direction ("we'll get to the rest
 later").
 
-Two decisions were confirmed with the user (2026-05-22):
+Decisions confirmed with the user (2026-05-22):
 
 - Ingestion → **governed Source Registry + bounded Discovery Scout**.
 - Agent Operations → **a thin GAITR-specific page**, not a bespoke dashboard.
+- Discovery Scout cadence → an **Admin-toggleable schedule setting** (default
+  weekly), not a fixed constant.
+- Source-registry edit rights → **Admin only**.
+- LLM-trace tool → an **interchangeable OTLP sink**, not a single named pick.
 
 ## Decision
 
@@ -163,7 +167,11 @@ body-size cap, wall-clock timeout, private-IP block after DNS resolution.
 
 **3. The Discovery Scout — bounded research, proposals only.**
 The registry must grow without a developer editing a list. The Discovery Scout
-is the one agent that does deep research. On a schedule (weekly by default) it:
+is the one agent that does deep research. It runs on a configurable schedule —
+an **Admin-set cadence** (daily / weekly / monthly), with optional
+event-triggered runs when the eval scorecard surfaces a capability-coverage gap.
+The cadence is platform configuration, not a code constant; it defaults to
+weekly and is changed from the Agent Operations run-controls (D5). Each run, it:
 
 - reads the current registry and the eval scorecard's capability-coverage gaps;
 - researches the landscape (web search) for new high-signal sources;
@@ -179,12 +187,14 @@ Hard boundaries — the Scout **never**:
   through the `propose_source` tool schema;
 - exceeds its per-run proposal cap.
 
-A human approves a `proposed` source at the governance gate before any
-connector is ever pointed at it. This is the security spine of the ingestion
-model: deep research is sandboxed to *proposing data sources*, and a human
-stands between a proposal and a live fetch — closing A1 (no instruction
-channel), A2 (no Scout-initiated fetch), and A3 (proposed sources carry trust
-metadata and require approval).
+An **Admin** approves a `proposed` source at the governance gate before any
+connector is ever pointed at it. Registry edits — add / retire / approve /
+reject — are an **Admin-only** right (RBAC, CRITIQUE H1); Reviewer does not get
+source rights, keeping the trust boundary tight. This is the security spine of
+the ingestion model: deep research is sandboxed to *proposing data sources*,
+and an Admin stands between a proposal and a live fetch — closing A1 (no
+instruction channel), A2 (no Scout-initiated fetch), and A3 (proposed sources
+carry trust metadata and require approval).
 
 So the data path is: **Discovery Scout proposes → human approves → connector
 ingests → pipeline processes.** Nothing is hardcoded; nothing is free-roaming.
@@ -197,9 +207,17 @@ not entirely.** Generic observability genuinely covers the bulk of it:
 - Infra telemetry — latency, throughput, error rate, queue depth, token usage,
   cost, distributed traces — goes to the ADR 0001 observability stack:
   OpenTelemetry → Grafana / Honeycomb, Sentry for errors, plus an LLM-trace
-  tool (Langfuse proposed — open-source, self-hostable) for prompt / token /
-  eval tracing. Rebuilding this as bespoke React pages would be strictly worse
-  than the real tools.
+  tool for prompt / token / eval tracing. The trace tool is an
+  **interchangeable OTLP sink**: GAITR instruments every LLM call as an
+  OpenTelemetry span using the GenAI semantic conventions (ADR 0001 already
+  mandates OpenTelemetry), so Langfuse, Arize Phoenix, and Braintrust are all
+  supported as the backend and selected by config — the same swap-by-config
+  pattern as the C5 provider abstraction, not a re-instrumentation. Langfuse is
+  the default (open-source, self-hostable). The one part that does not port for
+  free is a vendor's proprietary eval-experiment UI — but GAITR keeps its eval
+  sets and acceptance thresholds in-repo (D2 / D3) and its eval scorecard on the
+  thin page below, so the trace tool stays a pure sink. Rebuilding any of this
+  as bespoke React pages would be strictly worse than the real tools.
 - Live pipeline status already has a home: ADR 0003 puts Orchestrator/stage
   status on the **Command Center** (Phase 1).
 
@@ -289,16 +307,18 @@ across ADR 0003's existing phases:
   this agent-design ADR.
 - The Analyst Console and analyst-persona doctrine remain open — a later ADR,
   when the user "gets to the rest."
+- The three open questions on Scout cadence, registry edit rights, and the
+  LLM-trace tool are resolved (2026-05-22) and folded into D4 / D5; only the
+  Analyst Console remains deferred.
 - This ADR stays **Proposed** until the user signs off; on sign-off it and
   ADR 0003 flip to Accepted and Phase 0 begins.
 
 ## Open questions for the user
 
-1. **Discovery Scout cadence** — weekly is the proposed default. Faster
-   (daily), slower (monthly), or event-triggered as well?
-2. **Source-registry edit rights** — Admin only, or Admin + Reviewer? (Ties to
-   RBAC, CRITIQUE H1.)
-3. **LLM-trace tool** — Langfuse is proposed (open-source, self-hostable). Open
-   to Phoenix or Braintrust instead.
-4. **Analyst Console + persona doctrine** — deferred by your direction; it will
+Questions 1–3 were **resolved with the user on 2026-05-22** and folded into the
+decisions above — Scout cadence (D4: Admin-toggleable, default weekly),
+source-registry edit rights (D4: Admin only), and the LLM-trace tool
+(D5: interchangeable OTLP sink). One question remains open:
+
+1. **Analyst Console + persona doctrine** — deferred by your direction; it will
    get its own ADR. Flagged here so it is not lost.
