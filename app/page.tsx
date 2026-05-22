@@ -1,6 +1,15 @@
-/* Command Center — the platform overview (ADR 0003 D5, Phase 1).
-   Surfaces are added incrementally: pipeline river, then the panels. */
-export default function CommandCenterPage() {
+import { count } from "drizzle-orm";
+import { db } from "@/lib/db/client";
+import { alchemyScenarios } from "@/lib/db/schema";
+import { PipelineRiver } from "@/components/command-center/pipeline-river";
+
+/* Command Center — the platform overview (ADR 0003 D5, Phase 1). */
+export const dynamic = "force-dynamic";
+
+export default async function CommandCenterPage() {
+  const [row] = await db.select({ value: count() }).from(alchemyScenarios);
+  const scenarioCount = row?.value ?? 0;
+
   return (
     <div className="mx-auto max-w-7xl space-y-8 px-6 py-10">
       <header className="space-y-1">
@@ -16,6 +25,8 @@ export default function CommandCenterPage() {
           orchestration.
         </p>
       </header>
+
+      <PipelineRiver liveScenarioCount={scenarioCount} />
     </div>
   );
 }
