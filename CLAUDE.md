@@ -37,26 +37,30 @@ Replit version is acceptable.
 ## Current state
 
 - **Branch**: `claude/review-gaitr-file-KK0iC`
-- **Last meaningful artifact**: ADR 0004 — agent design + the ingestion model
-  (a taxonomy of three genuine agents, versioned capability specs, a governed
-  Source Registry + Discovery Scout, a thin Agent Operations page). Its three
-  open questions — Scout cadence, registry edit rights, LLM-trace tool — were
-  resolved with the user on 2026-05-22 and folded into D4 / D5.
+- **Last meaningful artifact**: Phase 0 — the design-system foundation
+  (ADR 0003). Four commits: re-tokenized `globals.css` to the Zarori brand
+  palette (lime accent, Okabe-Ito + neon data scales); a sidebar + canvas app
+  shell; `BentoCard` / `BigNumeric` primitives + a glass Button variant; the
+  Alchemy Engine pages rethemed onto the shell. Viz deps and the right stat
+  rail are deferred to Phase 1 (no Phase 0 consumer).
 - **Design state**: ADRs 0001–0004 written. 0001 (scope & stack) and 0002
   (Alchemy Engine slice) document shipped work; **0003 (full-platform 3-tier
   architecture) and 0004 (agent design) are `Accepted`** — signed off by the
-  user on 2026-05-22. Phase 0 is now unblocked.
-- **Code shipped**: Alchemy Engine v0.1 — six-commit clean-room build of the
-  synergy-synthesis slice. Stubbed LLM by default; real Sonnet via
-  `ALCHEMY_LLM_PROVIDER=anthropic`. End-to-end working locally.
+  user on 2026-05-22.
+- **Code shipped**: Alchemy Engine v0.1 (synergy-synthesis slice) + Phase 0
+  design system. Stubbed LLM by default; real Sonnet via
+  `ALCHEMY_LLM_PROVIDER=anthropic`. End-to-end working locally (build + 10
+  tests green; synthesis verified against a local Postgres).
 - **Critique fixes shipped (in the Engine)**: B1 (decision-record audit trail,
   UI provenance drawer), A1 (structured-output-only synthesizer, no attacker
   text in prompts), C5 (provider abstraction), F1 (deterministic candidate
   generation — specified + implemented + tested).
-- **Recommended next**: Phase 0 — the design-system foundation — now unblocked
-  by the 0003 + 0004 sign-off. The ingestion code (Source Registry, connectors,
-  Discovery Scout) follows in Phase 2, behind `/security-review` per CRITIQUE
-  cluster A.
+- **Recommended next**: Phase 1 — the Command Center (ADR 0003): the pipeline
+  river (React Flow + particle edges), Intelligence Spotlight, SAIF Threat
+  Landscape, Threat Analytics, Orchestrator status. Viz deps install here.
+  **Hard stop for user review after Phase 1.** Ingestion code (Source Registry,
+  connectors, Discovery Scout) follows in Phase 2, behind `/security-review`
+  per CRITIQUE cluster A.
 
 ## User preferences (durable)
 
