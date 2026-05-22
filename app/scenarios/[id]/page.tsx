@@ -45,13 +45,13 @@ export default async function ScenarioDetailPage({ params }: PageProps) {
     : [];
 
   return (
-    <main className="container mx-auto max-w-3xl px-6 py-10">
+    <div className="mx-auto max-w-3xl px-6 py-10">
       <ScenarioCard
         scenario={scenario}
         tools={tools}
         matchedPatterns={matchedPatterns}
         rightSlot={decision && <ProvenanceDrawer decision={decision} />}
       />
-    </main>
+    </div>
   );
 }

@@ -5,6 +5,8 @@ import { Sparkles } from "lucide-react";
 import { matchSynergies } from "@/lib/alchemy/match";
 import type { AiTool, CapabilitySynergy } from "@/lib/db/schema";
 import { Badge } from "@/components/ui/badge";
+import { BentoCard } from "@/components/ui/bento-card";
+import { BigNumeric } from "@/components/ui/big-numeric";
 import { SaifBadge } from "@/components/saif-badge";
 import type { SaifControl } from "@/lib/db/capabilities";
 
@@ -44,14 +46,22 @@ export function SynergyPreview({
     );
   }
 
+  const peakRisk = Math.max(
+    ...matched.map((m) => Number(m.pattern.riskMultiplier)),
+  );
+
   return (
-    <div className="space-y-2">
-      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-        <Sparkles className="h-3 w-3" />
-        <span>
-          {matched.length} pattern{matched.length === 1 ? "" : "s"} matched
-        </span>
-      </div>
+    <div className="space-y-3">
+      <BentoCard className="flex items-center justify-between p-4">
+        <BigNumeric
+          value={`${peakRisk.toFixed(1)}×`}
+          label="Peak synergy risk"
+          sublabel={`${matched.length} pattern${
+            matched.length === 1 ? "" : "s"
+          } matched`}
+        />
+        <Sparkles className="h-5 w-5 text-primary" />
+      </BentoCard>
       <ul className="space-y-2">
         {matched.map(({ pattern, contributingTools }) => (
           <li

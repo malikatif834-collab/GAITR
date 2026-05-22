@@ -60,7 +60,7 @@ export default function HomePage() {
   const canSynthesize = selectedIds.size >= 1 && !synthesizeM.isPending;
 
   return (
-    <main className="container mx-auto max-w-6xl px-6 py-10">
+    <div className="mx-auto max-w-6xl px-6 py-10">
       <header className="mb-8 space-y-1">
         <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
           GAITR · Alchemy Engine
@@ -143,7 +143,7 @@ export default function HomePage() {
           )}
         </section>
       </div>
-    </main>
+    </div>
   );
 }
 

@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export default function NotFound() {
   return (
-    <main className="container mx-auto max-w-2xl px-6 py-24">
+    <div className="mx-auto max-w-2xl px-6 py-24">
       <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
         404
       </p>
@@ -27,6 +27,6 @@ export default function NotFound() {
           Scenarios →
         </Link>
       </div>
-    </main>
+    </div>
   );
 }

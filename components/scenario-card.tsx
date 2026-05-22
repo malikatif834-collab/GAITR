@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { ShieldCheck, ArrowRight } from "lucide-react";
 import type { AlchemyScenario, AiTool, CapabilitySynergy } from "@/lib/db/schema";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { CardContent, CardHeader } from "@/components/ui/card";
+import { BentoCard } from "@/components/ui/bento-card";
 import { Badge } from "@/components/ui/badge";
 import { SaifBadge } from "@/components/saif-badge";
 import { ConfidenceMeter } from "@/components/confidence-meter";
@@ -30,7 +31,7 @@ export function ScenarioCard({
   const saif = scenario.saifControls as SaifControl[];
 
   return (
-    <Card>
+    <BentoCard>
       <CardHeader className="space-y-3 pb-4">
         <div className="flex items-start justify-between gap-3">
           <div className="space-y-1">
@@ -127,6 +128,6 @@ export function ScenarioCard({
           </Link>
         )}
       </CardContent>
-    </Card>
+    </BentoCard>
   );
 }

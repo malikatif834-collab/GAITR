@@ -16,7 +16,7 @@ export default function GlobalError({
   }, [error]);
 
   return (
-    <main className="container mx-auto max-w-2xl px-6 py-24">
+    <div className="mx-auto max-w-2xl px-6 py-24">
       <p className="font-mono text-xs uppercase tracking-widest text-destructive">
         Something went wrong
       </p>
@@ -34,6 +34,6 @@ export default function GlobalError({
       <div className="mt-6">
         <Button onClick={() => reset()}>Try again</Button>
       </div>
-    </main>
+    </div>
   );
 }

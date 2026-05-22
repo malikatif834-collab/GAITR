@@ -3,6 +3,7 @@ import { desc } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { alchemyScenarios } from "@/lib/db/schema";
 import { Badge } from "@/components/ui/badge";
+import { BentoCard } from "@/components/ui/bento-card";
 import { SaifBadge } from "@/components/saif-badge";
 import type { SaifControl } from "@/lib/db/capabilities";
 
@@ -16,7 +17,7 @@ export default async function ScenariosPage() {
     .limit(50);
 
   return (
-    <main className="container mx-auto max-w-4xl px-6 py-10">
+    <div className="mx-auto max-w-4xl px-6 py-10">
       <header className="mb-8 space-y-1">
         <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
           GAITR · Alchemy Engine
@@ -43,10 +44,11 @@ export default async function ScenariosPage() {
             const saif = s.saifControls as SaifControl[];
             return (
               <li key={s.id}>
-                <Link
-                  href={`/scenarios/${s.id}`}
-                  className="block rounded-md border border-border bg-card p-4 transition-colors hover:border-foreground/30"
+                <BentoCard
+                  asChild
+                  className="block p-4 transition-colors hover:border-foreground/30"
                 >
+                  <Link href={`/scenarios/${s.id}`}>
                   <div className="flex items-baseline justify-between gap-3">
                     <h2 className="truncate text-sm font-medium">
                       {s.emergentCapabilities.join(" · ")}
@@ -66,12 +68,13 @@ export default async function ScenariosPage() {
                       confidence {Number(s.confidence).toFixed(2)}
                     </Badge>
                   </div>
-                </Link>
+                  </Link>
+                </BentoCard>
               </li>
             );
           })}
         </ul>
       )}
-    </main>
+    </div>
   );
 }
