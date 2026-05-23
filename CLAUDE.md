@@ -29,7 +29,9 @@ Replit version is acceptable.
 | `README.md` | Run instructions for the Alchemy Engine |
 | `DEPLOY.md` | Vercel + Neon deploy recipe + one-click button URL |
 | `lib/alchemy/` | Matcher + synthesizer + provider abstraction + versioned prompts |
-| `lib/db/` | Drizzle schema (5 tables incl. `decision_records` per CRITIQUE.md B1) + seed |
+| `lib/pipeline/` | Phase 2 — the five non-synthesize stages as typed functions (`ingest`, `extract`, `correlate`, `map`, `report`) + the `runStage` wrapper that writes `agent_runs` with idempotency keys + the synthesize wrapper |
+| `lib/command-center/` | Command Center read model (`overview.ts`) + the pipeline-stage spec |
+| `lib/db/` | Drizzle schema (18 tables: the 5 ADR 0002 tables + the 13 Phase 2 pipeline tables) + seed for tools, synergies, SAIF corpus, source registry, incidents, and demo scenarios + pipeline runs |
 | `scripts/vercel-build.mjs` | Vercel-only build hook: runs migrate + idempotent seed if `DATABASE_URL` is present, then `next build` |
 | `.claude/settings.json` | Hooks: SessionStart prints branch + last commit + open todos |
 | `CLAUDE.md` | This file |
@@ -37,46 +39,59 @@ Replit version is acceptable.
 ## Current state
 
 - **Branch**: `claude/review-gaitr-file-KK0iC`
-- **Last meaningful artifact**: Phase 1 — the Command Center (ADR 0003).
-  Five commits: the ADR 0003 D4 viz stack installed (React Flow, D3, visx,
-  Recharts, Motion); the Command Center took the root route and the Alchemy
-  Engine moved to `/alchemy`; the pipeline river — a React Flow hero with SVG
-  particle edges and click-to-drill-in stage nodes; and the KPI strip plus
-  four panels (Intelligence Spotlight, SAIF Threat Landscape — a visx radar,
-  Threat Analytics — a Recharts trend, Orchestrator Status). The right stat
-  rail from ADR 0003's shell sketch stayed deferred: the Command Center
-  surfaces its stats in-page, so the rail has no Phase 1 consumer.
+- **Last meaningful artifact**: Phase 2 — the data model + pipeline
+  backend (ADR 0003 D1). Six commits: the 13-table schema migration
+  (`incidents`, `incident_tool_links`, `attack_fingerprints`,
+  `saif_controls`, `saif_mappings`, `source_registry`, `ingestion_events`,
+  `agent_runs`, `review_queue`, `feedback_events`, `eval_results`,
+  `users`, `briefs`); a 24-entry SAIF reference corpus + 12-entry source
+  registry seed; 12 hand-curated real-world incidents pre-linked to AI
+  tools at attribution vs capability `match_type`; the five non-`synthesize`
+  stages as typed functions in `lib/pipeline/` (each call writes one
+  `agent_runs` row, idempotency-keyed on the canonical hash of its input;
+  pure tag-driven extract, capability-overlap correlate, deterministic-
+  pick map, templated report); the Command Center wired through to real
+  pipeline data — river nodes show live per-stage run counts and output
+  nouns, the radar reads from `saif_mappings`, a new `PipelineOutputStrip`
+  surfaces incident / fingerprint / mapping / brief totals, and the
+  Orchestrator panel reflects per-stage activity; CLAUDE.md refreshed.
 - **Design state**: ADRs 0001–0004 written. 0001 (scope & stack) and 0002
   (Alchemy Engine slice) document shipped work; **0003 (full-platform 3-tier
   architecture) and 0004 (agent design) are `Accepted`** — signed off by the
   user on 2026-05-22.
-- **Code shipped**: Alchemy Engine v0.1 (synergy-synthesis slice) + Phase 0
-  design system + Phase 1 Command Center + Phase 1 polish (no-DB resilience
-  so Vercel deploys without Neon attached render the Command Center in demo
-  mode with a "configure DB" banner instead of crashing to `app/error.tsx`;
-  18-scenario demo seed across the 10 synergy patterns, back-dated across
-  the last 14 days, so a fresh deploy lands on a populated SAIF radar +
-  Threat Analytics trend). Stubbed LLM by default; real Sonnet via
-  `ALCHEMY_LLM_PROVIDER=anthropic`. End-to-end working locally (build + 10
-  tests green; all routes 200; synthesis verified 201 against a local
-  Postgres).
-- **Critique fixes shipped (in the Engine)**: B1 (decision-record audit trail,
-  UI provenance drawer), A1 (structured-output-only synthesizer, no attacker
-  text in prompts), C5 (provider abstraction), F1 (deterministic candidate
-  generation — specified + implemented + tested).
-- **Recommended next**: **Phase 2 — data model + pipeline backend** (ADR 0003
-  covers it; no new ADR needed). Six commit-sized slices: (1) schema
-  migration for the 13 Phase 2 tables (`incidents`, `incident_tool_links`,
-  `attack_fingerprints`, `saif_controls`, `saif_mappings`, `source_registry`,
-  `ingestion_events`, `agent_runs`, `review_queue`, `feedback_events`,
-  `eval_results`, `users`, `briefs`); (2) SAIF reference corpus + source
-  registry seed; (3) hand-curated starter incident set; (4) the five
-  non-`synthesize` stages as typed functions (`ingest`, `extract`,
-  `correlate`, `map`, `report`) writing `agent_runs` with idempotency keys;
-  (5) Command Center wiring against the real pipeline tables so the river +
-  panels show actual stage throughput, not just `synthesize`; (6) docs +
-  CLAUDE.md. Live external ingestion stays deferred to Phase 5 behind
-  `/security-review` (CRITIQUE cluster A).
+- **Code shipped**: Alchemy Engine v0.1 + Phase 0 design system + Phase 1
+  Command Center + Phase 1 polish (no-DB resilience, 18-scenario demo
+  seed) + Phase 2 backend (13 new tables, 24 SAIF controls, 12 sources,
+  12 incidents, the five typed pipeline stages in `lib/pipeline/`, Command
+  Center wired against `agent_runs` / `saif_mappings`). Stubbed LLM by
+  default; real Sonnet via `ALCHEMY_LLM_PROVIDER=anthropic`. End-to-end
+  working locally — build + 21 tests green; all routes 200; a fresh seed
+  lands 90 agent_runs across all six stages, 12 ingestion_events, 12
+  attack fingerprints, 104 incident_tool_links (25 seeded + 79
+  capability-matched by `correlate`), 49 SAIF mappings, 18 briefs.
+- **Critique fixes shipped**: B1 (decision-record audit trail + UI
+  provenance drawer), A1 (structured-output-only synthesizer + Phase 2
+  ingestion_events carry `sanitization_flags`), C5 (provider abstraction),
+  F1 (deterministic candidate generation), C2 (`report` stage composes
+  briefs over already-mapped data — no new analysis), C3 (`extract` is one
+  service that replaces Curator + Fingerprint Archivist), D3 (MITRE ATLAS
+  + ATT&CK ids on `attack_fingerprints`), E2 (every stage call writes an
+  `agent_runs` row keyed by `(stage_id, idempotency_key)`), F3 (`match_type`
+  on `incident_tool_links` distinguishes capability from attribution; only
+  attribution feeds risk).
+- **Recommended next**: **Phase 3 — Tier-1 orchestrator + Agent
+  Operations** (gets its own ADR — 0005, to be written). The autonomous
+  controller: scheduler + new-data event triggers, stage dispatch over the
+  `lib/pipeline/` functions, decision-record audit, governance-gate
+  routing (`review_queue` consumer), eval-metric watch. Plus the thin
+  Agent Operations page per ADR 0004 D5 — eval scorecard + decision-record
+  explainability + operator run-controls. Open design questions for
+  ADR 0005: scheduling (Vercel Cron vs BullMQ/Upstash Redis — ADR 0003 D3
+  flagged), the `runStage` race (slice 4's `lib/pipeline/run.ts` notes the
+  non-atomic check + insert), and embeddings infra for the attribution-
+  grade `correlate` path. After Phase 3: Phase 4 (SAIF Alignment, Threat
+  Posture, Threat Knowledge Base, Review Queue UI), then Phase 5
+  (hardening + live ingestion behind `/security-review`).
 
 ## User preferences (durable)
 
