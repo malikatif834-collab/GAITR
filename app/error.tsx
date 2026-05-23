@@ -12,7 +12,7 @@ export default function GlobalError({
 }) {
   useEffect(() => {
     // eslint-disable-next-line no-console
-    console.error("[alchemy] unhandled error:", error);
+    console.error("[gaitr] unhandled error:", error);
   }, [error]);
 
   return (
@@ -21,7 +21,7 @@ export default function GlobalError({
         Something went wrong
       </p>
       <h1 className="mt-2 text-3xl font-semibold tracking-tight">
-        The synthesizer hit an error.
+        The platform hit an error.
       </h1>
       <p className="mt-3 text-sm text-muted-foreground">
         {error.message || "An unexpected error occurred."}
@@ -31,6 +31,13 @@ export default function GlobalError({
           Digest: {error.digest}
         </p>
       )}
+      <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
+        Freshly deployed? Most often this means a database isn&rsquo;t
+        attached. Provision Neon on the Vercel project
+        (Storage&nbsp;→&nbsp;Neon&nbsp;Marketplace) and redeploy. See{" "}
+        <code className="font-mono text-foreground">DEPLOY.md</code> for the
+        one-click recipe.
+      </p>
       <div className="mt-6">
         <Button onClick={() => reset()}>Try again</Button>
       </div>
