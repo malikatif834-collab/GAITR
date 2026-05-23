@@ -1,5 +1,5 @@
 import { count, desc } from "drizzle-orm";
-import { db } from "@/lib/db/client";
+import { db, tryDb } from "@/lib/db/client";
 import {
   aiTools,
   alchemyScenarios,
@@ -12,6 +12,11 @@ import { SAIF_CONTROLS, type SaifControl } from "@/lib/db/capabilities";
  * row counts here are small (tens to low hundreds). Everything returned is
  * plain serializable data so it can cross the server → client boundary into
  * the viz components.
+ *
+ * On DB failure (unset `DATABASE_URL`, unreachable host, missing tables)
+ * the function returns the same shape with zero defaults and
+ * `databaseAvailable: false`, so the page can render in demo mode with a
+ * banner instead of crashing to `app/error.tsx`.
  */
 
 export interface SpotlightScenario {
@@ -24,6 +29,7 @@ export interface SpotlightScenario {
 }
 
 export interface CommandCenterData {
+  databaseAvailable: boolean;
   counts: { tools: number; synergies: number; scenarios: number };
   peakRisk: number;
   avgConfidence: number | null;
@@ -36,23 +42,39 @@ const SPOTLIGHT_LIMIT = 5;
 const TREND_DAYS = 14;
 
 export async function getCommandCenterData(): Promise<CommandCenterData> {
-  const [scenarioRows, toolCountRows, synergyRows] = await Promise.all([
-    db
-      .select({
-        id: alchemyScenarios.id,
-        emergentCapabilities: alchemyScenarios.emergentCapabilities,
-        narrative: alchemyScenarios.narrative,
-        saifControls: alchemyScenarios.saifControls,
-        confidence: alchemyScenarios.confidence,
-        createdAt: alchemyScenarios.createdAt,
-      })
-      .from(alchemyScenarios)
-      .orderBy(desc(alchemyScenarios.createdAt)),
-    db.select({ value: count() }).from(aiTools),
-    db
-      .select({ riskMultiplier: capabilitySynergies.riskMultiplier })
-      .from(capabilitySynergies),
-  ]);
+  const result = await tryDb(() =>
+    Promise.all([
+      db
+        .select({
+          id: alchemyScenarios.id,
+          emergentCapabilities: alchemyScenarios.emergentCapabilities,
+          narrative: alchemyScenarios.narrative,
+          saifControls: alchemyScenarios.saifControls,
+          confidence: alchemyScenarios.confidence,
+          createdAt: alchemyScenarios.createdAt,
+        })
+        .from(alchemyScenarios)
+        .orderBy(desc(alchemyScenarios.createdAt)),
+      db.select({ value: count() }).from(aiTools),
+      db
+        .select({ riskMultiplier: capabilitySynergies.riskMultiplier })
+        .from(capabilitySynergies),
+    ]),
+  );
+
+  if (result === null) {
+    return {
+      databaseAvailable: false,
+      counts: { tools: 0, synergies: 0, scenarios: 0 },
+      peakRisk: 0,
+      avgConfidence: null,
+      saifDistribution: SAIF_CONTROLS.map((control) => ({ control, count: 0 })),
+      recentScenarios: [],
+      scenariosByDay: bucketByDay([], TREND_DAYS),
+    };
+  }
+
+  const [scenarioRows, toolCountRows, synergyRows] = result;
 
   const peakRisk = synergyRows.length
     ? Math.max(...synergyRows.map((r) => Number(r.riskMultiplier)))
@@ -82,6 +104,7 @@ export async function getCommandCenterData(): Promise<CommandCenterData> {
     }));
 
   return {
+    databaseAvailable: true,
     counts: {
       tools: toolCountRows[0]?.value ?? 0,
       synergies: synergyRows.length,

@@ -33,3 +33,32 @@ function createClient(): PostgresJsDatabase<typeof schema> {
   });
   return drizzle(client, { schema });
 }
+
+/**
+ * Run a DB-touching async function, returning `null` on any throw — covers
+ * both the synchronous proxy throw when `DATABASE_URL` is unset and async
+ * connection / table failures. Lets server components degrade to a clearly
+ * labelled "demo mode" instead of crashing to `app/error.tsx`.
+ */
+export async function tryDb<T>(fn: () => Promise<T>): Promise<T | null> {
+  try {
+    return await fn();
+  } catch (err) {
+    console.warn("[gaitr] DB unavailable:", describeError(err));
+    return null;
+  }
+}
+
+/** Walk an Error's `cause` chain so the postgres-driver root reason
+   (e.g. ECONNREFUSED, relation does not exist) is visible past the
+   Drizzle "Failed query: …" wrapper. */
+function describeError(err: unknown): string {
+  if (!(err instanceof Error)) return String(err);
+  const parts = [err.message];
+  let cur: unknown = err.cause;
+  while (cur instanceof Error) {
+    parts.push(`caused by: ${cur.message}`);
+    cur = (cur as Error & { cause?: unknown }).cause;
+  }
+  return parts.join(" — ");
+}

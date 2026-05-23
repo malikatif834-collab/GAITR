@@ -5,6 +5,7 @@ import { IntelligenceSpotlight } from "@/components/command-center/intelligence-
 import { SaifThreatLandscape } from "@/components/command-center/saif-threat-landscape";
 import { ThreatAnalytics } from "@/components/command-center/threat-analytics";
 import { OrchestratorStatus } from "@/components/command-center/orchestrator-status";
+import { NoDatabaseBanner } from "@/components/no-database-banner";
 
 /* Command Center — the platform overview (ADR 0003 D5, Phase 1). */
 export const dynamic = "force-dynamic";
@@ -14,6 +15,8 @@ export default async function CommandCenterPage() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-8 px-6 py-10">
+      {!data.databaseAvailable && <NoDatabaseBanner />}
+
       <header className="space-y-1">
         <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
           GAITR · Command Center
