@@ -1,4 +1,4 @@
-import { count, desc, eq, max } from "drizzle-orm";
+import { and, count, desc, eq, gte, max } from "drizzle-orm";
 import { db, tryDb } from "@/lib/db/client";
 import {
   agentRuns,
@@ -7,6 +7,7 @@ import {
   attackFingerprints,
   briefs,
   capabilitySynergies,
+  decisionRecords,
   incidents,
   saifControls,
   saifMappings,
@@ -42,6 +43,11 @@ export interface StageActivity {
 
 export type StageActivityMap = Record<StageId, StageActivity>;
 
+export interface OrchestratorActivity {
+  lastTickAt: string | null;
+  ticksLast24h: number;
+}
+
 export interface CommandCenterData {
   databaseAvailable: boolean;
   counts: {
@@ -59,6 +65,7 @@ export interface CommandCenterData {
   recentScenarios: SpotlightScenario[];
   scenariosByDay: { date: string; count: number }[];
   stageActivity: StageActivityMap;
+  orchestratorActivity: OrchestratorActivity;
 }
 
 const SPOTLIGHT_LIMIT = 5;
@@ -120,6 +127,24 @@ export async function getCommandCenterData(): Promise<CommandCenterData> {
         .from(agentRuns)
         .where(eq(agentRuns.status, "succeeded"))
         .groupBy(agentRuns.stageId),
+      db
+        .select({
+          lastTickAt: max(decisionRecords.createdAt),
+        })
+        .from(decisionRecords)
+        .where(eq(decisionRecords.agentName, "orchestrator")),
+      db
+        .select({ value: count() })
+        .from(decisionRecords)
+        .where(
+          and(
+            eq(decisionRecords.agentName, "orchestrator"),
+            gte(
+              decisionRecords.createdAt,
+              new Date(Date.now() - 24 * 60 * 60 * 1000),
+            ),
+          ),
+        ),
     ]),
   );
 
@@ -141,6 +166,7 @@ export async function getCommandCenterData(): Promise<CommandCenterData> {
       recentScenarios: [],
       scenariosByDay: bucketByDay([], TREND_DAYS),
       stageActivity: zeroStageActivity(),
+      orchestratorActivity: { lastTickAt: null, ticksLast24h: 0 },
     };
   }
 
@@ -153,6 +179,8 @@ export async function getCommandCenterData(): Promise<CommandCenterData> {
     briefCountRows,
     saifMappingByCategory,
     agentRunsByStage,
+    orchestratorLastTickRows,
+    orchestratorRecentTickRows,
   ] = result;
 
   const peakRisk = synergyRows.length
@@ -206,6 +234,7 @@ export async function getCommandCenterData(): Promise<CommandCenterData> {
     };
   }
 
+  const lastTickAt = orchestratorLastTickRows[0]?.lastTickAt ?? null;
   return {
     databaseAvailable: true,
     counts: {
@@ -226,6 +255,10 @@ export async function getCommandCenterData(): Promise<CommandCenterData> {
       TREND_DAYS,
     ),
     stageActivity,
+    orchestratorActivity: {
+      lastTickAt: lastTickAt ? new Date(lastTickAt).toISOString() : null,
+      ticksLast24h: Number(orchestratorRecentTickRows[0]?.value ?? 0),
+    },
   };
 }
 

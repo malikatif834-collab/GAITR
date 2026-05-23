@@ -48,7 +48,10 @@ export default async function CommandCenterPage() {
           series={data.scenariosByDay}
           className="lg:col-span-2"
         />
-        <OrchestratorStatus stageActivity={data.stageActivity} />
+        <OrchestratorStatus
+          stageActivity={data.stageActivity}
+          orchestratorActivity={data.orchestratorActivity}
+        />
       </div>
     </div>
   );
