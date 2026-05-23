@@ -51,21 +51,32 @@ Replit version is acceptable.
   architecture) and 0004 (agent design) are `Accepted`** — signed off by the
   user on 2026-05-22.
 - **Code shipped**: Alchemy Engine v0.1 (synergy-synthesis slice) + Phase 0
-  design system + Phase 1 Command Center. Stubbed LLM by default; real Sonnet
-  via `ALCHEMY_LLM_PROVIDER=anthropic`. End-to-end working locally (build + 10
+  design system + Phase 1 Command Center + Phase 1 polish (no-DB resilience
+  so Vercel deploys without Neon attached render the Command Center in demo
+  mode with a "configure DB" banner instead of crashing to `app/error.tsx`;
+  18-scenario demo seed across the 10 synergy patterns, back-dated across
+  the last 14 days, so a fresh deploy lands on a populated SAIF radar +
+  Threat Analytics trend). Stubbed LLM by default; real Sonnet via
+  `ALCHEMY_LLM_PROVIDER=anthropic`. End-to-end working locally (build + 10
   tests green; all routes 200; synthesis verified 201 against a local
   Postgres).
 - **Critique fixes shipped (in the Engine)**: B1 (decision-record audit trail,
   UI provenance drawer), A1 (structured-output-only synthesizer, no attacker
   text in prompts), C5 (provider abstraction), F1 (deterministic candidate
   generation — specified + implemented + tested).
-- **Recommended next**: **Hard stop — user review of Phase 1** (ADR 0003's
-  design-language + hero-viz checkpoint). The user has also asked to hold any
-  deployment until Phase 1 is reviewed — nothing is deployed. After sign-off:
-  Phase 2 — the data model + pipeline backend (the `incidents` / `saif_*` /
-  `agent_runs` tables, the six stages as typed jobs, SAIF corpus + a starter
-  incident seed). Live external ingestion stays deferred to Phase 5 behind
-  `/security-review` per CRITIQUE cluster A.
+- **Recommended next**: **Phase 2 — data model + pipeline backend** (ADR 0003
+  covers it; no new ADR needed). Six commit-sized slices: (1) schema
+  migration for the 13 Phase 2 tables (`incidents`, `incident_tool_links`,
+  `attack_fingerprints`, `saif_controls`, `saif_mappings`, `source_registry`,
+  `ingestion_events`, `agent_runs`, `review_queue`, `feedback_events`,
+  `eval_results`, `users`, `briefs`); (2) SAIF reference corpus + source
+  registry seed; (3) hand-curated starter incident set; (4) the five
+  non-`synthesize` stages as typed functions (`ingest`, `extract`,
+  `correlate`, `map`, `report`) writing `agent_runs` with idempotency keys;
+  (5) Command Center wiring against the real pipeline tables so the river +
+  panels show actual stage throughput, not just `synthesize`; (6) docs +
+  CLAUDE.md. Live external ingestion stays deferred to Phase 5 behind
+  `/security-review` (CRITIQUE cluster A).
 
 ## User preferences (durable)
 
