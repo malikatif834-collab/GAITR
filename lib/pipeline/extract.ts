@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { attackFingerprints, incidents } from "@/lib/db/schema";
-import { runStage, createStubDecisionRecord } from "./run";
+import { runStage, createStubDecisionRecord, type RunStageOpts } from "./run";
 import type { StageOutput } from "./types";
 
 /**
@@ -101,6 +101,7 @@ export interface ExtractOutput {
 
 export async function extractFromIncident(
   incidentId: string,
+  opts: RunStageOpts = {},
 ): Promise<StageOutput<ExtractOutput>> {
   return runStage(
     "extract",
@@ -146,5 +147,6 @@ export async function extractFromIncident(
       };
       return { output, outputHashable: extracted, decisionRecordId };
     },
+    opts,
   );
 }

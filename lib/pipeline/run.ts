@@ -45,6 +45,7 @@ export async function runStage<TIn, TOut>(
       idempotencyKey,
       status: "running",
       inputHash,
+      input: input as object,
     })
     .onConflictDoNothing({
       target: [agentRuns.stageId, agentRuns.idempotencyKey],

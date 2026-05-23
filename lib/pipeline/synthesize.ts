@@ -1,5 +1,5 @@
 import { synthesizeScenario } from "@/lib/alchemy/synthesize";
-import { runStage } from "./run";
+import { runStage, type RunStageOpts } from "./run";
 import type { StageOutput } from "./types";
 
 /**
@@ -14,9 +14,10 @@ export interface SynthesizeOutput {
   decisionRecordId: string;
 }
 
-export async function synthesizeStage(input: {
-  toolIds: string[];
-}): Promise<StageOutput<SynthesizeOutput>> {
+export async function synthesizeStage(
+  input: { toolIds: string[] },
+  opts: RunStageOpts = {},
+): Promise<StageOutput<SynthesizeOutput>> {
   return runStage("synthesize", input, async () => {
     const result = await synthesizeScenario(input.toolIds);
     const output: SynthesizeOutput = {
@@ -28,5 +29,5 @@ export async function synthesizeStage(input: {
       outputHashable: { scenarioId: output.scenarioId },
       decisionRecordId: result.decision.id,
     };
-  });
+  }, opts);
 }

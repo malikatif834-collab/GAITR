@@ -6,7 +6,7 @@ import {
   saifMappings,
 } from "@/lib/db/schema";
 import type { SaifControl } from "@/lib/db/capabilities";
-import { runStage, createStubDecisionRecord } from "./run";
+import { runStage, createStubDecisionRecord, type RunStageOpts } from "./run";
 import type { StageOutput, Subject } from "./types";
 
 /**
@@ -28,6 +28,7 @@ export interface MapOutput {
 
 export async function mapSubject(
   subject: Subject,
+  opts: RunStageOpts = {},
 ): Promise<StageOutput<MapOutput>> {
   return runStage("map", subject, async () => {
     if (subject.kind !== "scenario") {
@@ -95,5 +96,5 @@ export async function mapSubject(
       outputHashable: { picks: picks.map((p) => p.code) },
       decisionRecordId,
     };
-  });
+  }, opts);
 }

@@ -288,9 +288,13 @@ export const agentRuns = pgTable(
     /** "ingest" | "extract" | "correlate" | "synthesize" | "map" | "report" */
     stageId: text("stage_id").notNull(),
     idempotencyKey: text("idempotency_key").notNull(),
-    /** "succeeded" | "failed" | "skipped" */
+    /** "succeeded" | "failed" | "running" | "skipped" */
     status: text("status").notNull(),
     inputHash: text("input_hash").notNull(),
+    /** Stored input payload (jsonb), used by the ops replay endpoint to
+     *  re-dispatch the same work. Nullable for rows created before this
+     *  column existed (migration 0002). */
+    input: jsonb("input"),
     outputHash: text("output_hash"),
     decisionRecordId: uuid("decision_record_id").references(
       () => decisionRecords.id,

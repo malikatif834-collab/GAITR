@@ -5,7 +5,7 @@ import {
   attackFingerprints,
   incidentToolLinks,
 } from "@/lib/db/schema";
-import { runStage } from "./run";
+import { runStage, type RunStageOpts } from "./run";
 import type { StageOutput } from "./types";
 
 /**
@@ -41,6 +41,7 @@ export function capabilityConfidence(overlap: number): number {
 
 export async function correlateIncident(
   incidentId: string,
+  opts: RunStageOpts = {},
 ): Promise<StageOutput<CorrelateOutput>> {
   return runStage("correlate", { incidentId }, async () => {
     const fingerprints = await db
@@ -92,5 +93,5 @@ export async function correlateIncident(
       toolIds: newLinks.map((l) => l.toolId),
     };
     return { output, outputHashable: output };
-  });
+  }, opts);
 }

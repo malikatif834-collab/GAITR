@@ -2,7 +2,8 @@ import { NextResponse, type NextRequest } from "next/server";
 import { OPS_COOKIE } from "@/lib/ops/auth";
 
 /**
- * Edge middleware that gates the /ops surface (ADR 0005 D6).
+ * Edge proxy (renamed from middleware in Next 16) that gates the /ops
+ * surface (ADR 0005 D6).
  *
  *   - OPS_ADMIN_TOKEN unset → 404 on every match (the surface doesn't
  *     exist on a deploy that didn't opt in).
@@ -12,10 +13,6 @@ import { OPS_COOKIE } from "@/lib/ops/auth";
  *     redirects to /ops/login with a `next` param.
  *   - /api/ops/* requests check the `Authorization: Bearer` (or
  *     `x-ops-token`) header; mismatch returns 401.
- *
- * Note: this file lives at the repo root per Next 15+ convention; the
- * `config.matcher` below scopes it to the ops paths so the rest of the
- * app is unaffected.
  */
 
 export const config = {
@@ -25,7 +22,7 @@ export const config = {
 const LOGIN_PAGE = "/ops/login";
 const LOGIN_API = "/api/ops/login";
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const token = process.env.OPS_ADMIN_TOKEN;
   const { pathname } = request.nextUrl;
 

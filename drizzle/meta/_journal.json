@@ -15,6 +15,13 @@
       "when": 1779553039576,
       "tag": "0001_sleepy_wendell_vaughn",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1779565800134,
+      "tag": "0002_last_pete_wisdom",
+      "breakpoints": true
     }
   ]
 }

@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { ingestionEvents, sourceRegistry } from "@/lib/db/schema";
-import { runStage } from "./run";
+import { runStage, type RunStageOpts } from "./run";
 import type { StageOutput } from "./types";
 
 /**
@@ -22,6 +22,7 @@ export interface IngestOutput {
 
 export async function ingestSource(
   sourceId: string,
+  opts: RunStageOpts = {},
 ): Promise<StageOutput<IngestOutput>> {
   return runStage("ingest", { sourceId }, async () => {
     const [source] = await db
@@ -69,5 +70,5 @@ export async function ingestSource(
       skipped: false,
     };
     return { output, outputHashable: { externalRef, payload } };
-  });
+  }, opts);
 }

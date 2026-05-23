@@ -7,7 +7,7 @@ import {
   saifControls,
   saifMappings,
 } from "@/lib/db/schema";
-import { runStage, createStubDecisionRecord } from "./run";
+import { runStage, createStubDecisionRecord, type RunStageOpts } from "./run";
 import type { StageOutput, Subject } from "./types";
 
 /**
@@ -24,6 +24,7 @@ export interface ReportOutput {
 
 export async function composeBrief(
   subject: Subject,
+  opts: RunStageOpts = {},
 ): Promise<StageOutput<ReportOutput>> {
   return runStage("report", subject, async () => {
     if (subject.kind !== "scenario") {
@@ -90,7 +91,7 @@ export async function composeBrief(
       outputHashable: { title, body: body.length },
       decisionRecordId,
     };
-  });
+  }, opts);
 }
 
 interface ScenarioForBrief {
