@@ -18,7 +18,7 @@ chooses its own tool calls. Single schema-constrained LLM calls (`extract`,
 
 | Agent | Spec | Status |
 |---|---|---|
-| Orchestrator | `orchestrator.md` | Pending — back-filled when Phase 3 starts |
+| Orchestrator | `orchestrator.md` | `orchestrator@1.0.0` (Phase 3, ADR 0005) — deterministic planner, no LLM in v1 |
 | Synthesizer | `synthesizer.md` | Pending — back-fill from ADR 0002 (`lib/alchemy/`) |
 | Discovery Scout | `discovery-scout.md` | Drafted (ADR 0004) |
 
