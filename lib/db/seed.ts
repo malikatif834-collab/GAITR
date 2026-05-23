@@ -1,4 +1,4 @@
-import { sql } from "drizzle-orm";
+import { count, eq, sql } from "drizzle-orm";
 import { db } from "./client";
 import {
   agentRuns,
@@ -1423,6 +1423,45 @@ async function seedScenarios() {
 }
 
 /**
+ * If scenarios exist but no synthesize agent_runs do (typical Vercel
+ * redeploy state: Phase 1 polish seeded 18 scenarios via the legacy
+ * synthesizeScenario path before Phase 2 added the runStage wrapper),
+ * insert one agent_runs row per scenario so the Command Center counts
+ * all six stages correctly. Idempotency-keyed on `backfill:<scenarioId>`
+ * so re-runs are a no-op (the UNIQUE constraint on
+ * (stage_id, idempotency_key) catches duplicates).
+ *
+ * Gated on the deficit: only runs when `count(synthesize runs) === 0
+ * && count(scenarios) > 0`, so a fresh `reset` seed (which writes runs
+ * naturally via synthesizeStage) doesn't double-count.
+ */
+async function backfillSynthesizeRuns() {
+  const [{ value: runs }] = await db
+    .select({ value: count() })
+    .from(agentRuns)
+    .where(eq(agentRuns.stageId, "synthesize"));
+  if (runs > 0) return;
+
+  const scenarios = await db.select().from(alchemyScenarios);
+  if (scenarios.length === 0) return;
+
+  console.log("Backfilling %d synthesize agent_runs...", scenarios.length);
+  await db.insert(agentRuns).values(
+    scenarios.map((s) => ({
+      stageId: "synthesize" as const,
+      idempotencyKey: `backfill:${s.id}`,
+      status: "succeeded" as const,
+      inputHash: `backfill:${s.id}`,
+      outputHash: `backfill:scenario:${s.id}`,
+      decisionRecordId: s.decisionRecordId,
+      startedAt: s.createdAt,
+      completedAt: s.createdAt,
+    })),
+  );
+  console.log("  + backfill complete.");
+}
+
+/**
  * Drive the five non-synthesize stages over the seeded data so the
  * Command Center has live agent_runs / fingerprints / mappings / briefs
  * to surface on the first request. Stub provider only — no Anthropic
@@ -1430,6 +1469,8 @@ async function seedScenarios() {
  */
 async function seedPipelineRuns() {
   process.env.ALCHEMY_LLM_PROVIDER = "stub";
+
+  await backfillSynthesizeRuns();
 
   const sources = await db.select().from(sourceRegistry);
   console.log("Pipeline: ingest over %d sources...", sources.length);
