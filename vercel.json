@@ -4,7 +4,7 @@
   "crons": [
     {
       "path": "/api/cron/orchestrator/tick",
-      "schedule": "*/15 * * * *"
+      "schedule": "0 10 * * *"
     }
   ]
 }
