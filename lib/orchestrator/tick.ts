@@ -4,20 +4,18 @@ import {
   PLANNER_ACTION_CAP,
   PLANNER_RULE_VERSION,
 } from "./planner";
-import { dispatchAction } from "./dispatcher";
+import { dispatchAction, type DispatchedAction } from "./dispatcher";
 import { writeOrchestratorDecision } from "./audit";
-import type { ActionResult, TickReason, TickReport } from "./types";
+import { computeMetrics } from "./eval";
+import type { TickReason, TickReport } from "./types";
 
 /**
  * One tick = read state → build plan → write decision record → dispatch
- * each action → return a TickReport. The same entry point powers the
- * Vercel cron route and the operator "Run a tick" button (ADR 0005 D1).
+ * each action (each routes its outputs through the governance gate) →
+ * write 3 eval metrics → return TickReport.
  *
- * Per ADR 0005 D8, every tick also writes 3 eval_results rows; the gate
- * is invoked per-action by the dispatcher path's stage outputs in the
- * Phase-3 commit that follows. For commit 2 (planner+dispatcher only),
- * gateDecisions and evalRows are reported as 0; commit 3 wires the gate
- * + eval modules and bumps both.
+ * Same entry point powers /api/cron/orchestrator/tick and /api/ops/tick
+ * (ADR 0005 D5).
  */
 export async function runTick(opts: {
   reason: TickReason;
@@ -40,10 +38,28 @@ export async function runTick(opts: {
 
   const decisionRecordId = await writeOrchestratorDecision({ state, plan });
 
-  const results: ActionResult[] = [];
+  const results: DispatchedAction[] = [];
   for (const action of actions) {
     results.push(await dispatchAction(action));
   }
+
+  let evalRows = 0;
+  try {
+    const metrics = await computeMetrics(startedAt);
+    evalRows = metrics.length;
+  } catch (err) {
+    // Eval failure shouldn't break the tick — log and continue. The
+    // missing window is visible on the scorecard (gap in the sparkline).
+    console.warn(
+      "[orchestrator] eval write failed:",
+      err instanceof Error ? err.message : String(err),
+    );
+  }
+
+  const gateDecisions = results.reduce(
+    (acc, r) => acc + r.gateDecisions.length,
+    0,
+  );
 
   const completedAt = new Date();
   return {
@@ -58,8 +74,8 @@ export async function runTick(opts: {
     cached: results.filter((r) => r.status === "cached").length,
     failed: results.filter((r) => r.status === "failed").length,
     truncated,
-    gateDecisions: 0,
-    evalRows: 0,
+    gateDecisions,
+    evalRows,
     actions: results,
   };
 }
