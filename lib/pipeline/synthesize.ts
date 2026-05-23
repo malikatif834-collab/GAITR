@@ -26,6 +26,7 @@ export async function synthesizeStage(input: {
     return {
       output,
       outputHashable: { scenarioId: output.scenarioId },
+      decisionRecordId: result.decision.id,
     };
   });
 }

@@ -144,7 +144,7 @@ export async function extractFromIncident(
         fingerprintId: row.id,
         decisionRecordId,
       };
-      return { output, outputHashable: extracted };
+      return { output, outputHashable: extracted, decisionRecordId };
     },
   );
 }

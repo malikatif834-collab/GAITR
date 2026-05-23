@@ -85,7 +85,11 @@ export async function composeBrief(
       .returning({ id: briefs.id });
 
     const output: ReportOutput = { briefId: row.id, decisionRecordId };
-    return { output, outputHashable: { title, body: body.length } };
+    return {
+      output,
+      outputHashable: { title, body: body.length },
+      decisionRecordId,
+    };
   });
 }
 

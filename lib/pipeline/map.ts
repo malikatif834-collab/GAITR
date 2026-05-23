@@ -90,6 +90,10 @@ export async function mapSubject(
       mappingIds: inserted.map((r) => r.id),
       decisionRecordId,
     };
-    return { output, outputHashable: { picks: picks.map((p) => p.code) } };
+    return {
+      output,
+      outputHashable: { picks: picks.map((p) => p.code) },
+      decisionRecordId,
+    };
   });
 }
