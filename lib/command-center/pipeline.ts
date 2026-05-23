@@ -29,9 +29,12 @@ export interface PipelineStage {
   isLlm: boolean;
   /** The spec-era agent(s) this stage replaces (ADR 0003 D1). */
   replaces: string;
+  /** Lifecycle intent. All six stages are "live" as of Phase 2 slice 4. */
   status: StageStatus;
-  /** When the stage ships. */
+  /** ADR that shipped the stage. */
   phase: string;
+  /** Domain noun for the stage's output (used in metric labels). */
+  outputNoun: string;
 }
 
 export const STAGES: PipelineStage[] = [
@@ -45,8 +48,9 @@ export const STAGES: PipelineStage[] = [
     compute: "Deterministic",
     isLlm: false,
     replaces: "Monitor Agent + Threat Intel Collector",
-    status: "planned",
-    phase: "Phase 2",
+    status: "live",
+    phase: "Live · Phase 2",
+    outputNoun: "events",
   },
   {
     id: "extract",
@@ -58,8 +62,9 @@ export const STAGES: PipelineStage[] = [
     compute: "LLM · single call",
     isLlm: true,
     replaces: "Curator + Fingerprint Archivist",
-    status: "planned",
-    phase: "Phase 2",
+    status: "live",
+    phase: "Live · Phase 2",
+    outputNoun: "fingerprints",
   },
   {
     id: "correlate",
@@ -71,8 +76,9 @@ export const STAGES: PipelineStage[] = [
     compute: "Embeddings · LLM tiebreaks",
     isLlm: true,
     replaces: "Incident Correlator",
-    status: "planned",
-    phase: "Phase 2",
+    status: "live",
+    phase: "Live · Phase 2",
+    outputNoun: "links",
   },
   {
     id: "synthesize",
@@ -86,6 +92,7 @@ export const STAGES: PipelineStage[] = [
     replaces: "Scenario Synthesizer",
     status: "live",
     phase: "Live · ADR 0002",
+    outputNoun: "scenarios",
   },
   {
     id: "map",
@@ -97,8 +104,9 @@ export const STAGES: PipelineStage[] = [
     compute: "LLM · single call",
     isLlm: true,
     replaces: "Analyst Agent",
-    status: "planned",
-    phase: "Phase 2",
+    status: "live",
+    phase: "Live · Phase 2",
+    outputNoun: "mappings",
   },
   {
     id: "report",
@@ -110,7 +118,8 @@ export const STAGES: PipelineStage[] = [
     compute: "LLM · single call",
     isLlm: true,
     replaces: "Reporter Agent",
-    status: "planned",
-    phase: "Phase 2",
+    status: "live",
+    phase: "Live · Phase 2",
+    outputNoun: "briefs",
   },
 ];

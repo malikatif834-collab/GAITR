@@ -2,11 +2,14 @@ import { Handle, Position, type Node, type NodeProps } from "@xyflow/react";
 import { motion } from "motion/react";
 import { cn } from "@/lib/utils";
 import type { PipelineStage } from "@/lib/command-center/pipeline";
+import type { StageActivity } from "@/lib/command-center/overview";
 
 export type StageNodeData = {
   stage: PipelineStage;
   /** Live throughput figure — present only for stages with real data. */
   metric: { value: string; label: string } | null;
+  /** Full agent_runs activity for this stage, passed through to drill-in. */
+  activity: StageActivity;
 };
 
 export type StageNode = Node<StageNodeData, "stage">;

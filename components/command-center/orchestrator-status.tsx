@@ -4,11 +4,19 @@ import { motion } from "motion/react";
 import { BentoCard } from "@/components/ui/bento-card";
 import { cn } from "@/lib/utils";
 import { STAGES } from "@/lib/command-center/pipeline";
+import type { StageActivityMap } from "@/lib/command-center/overview";
 
 /* Tier-1 orchestrator status. The controller itself lands in Phase 3
-   (ADR 0005) — clearly labelled as standby, with per-stage readiness
-   derived from the pipeline spec. */
-export function OrchestratorStatus({ className }: { className?: string }) {
+   (ADR 0005) — clearly labelled as standby. Per-stage readiness reads
+   from agent_runs activity, so each row shows the live run count once
+   Phase 2's stages are wired. */
+export function OrchestratorStatus({
+  stageActivity,
+  className,
+}: {
+  stageActivity: StageActivityMap;
+  className?: string;
+}) {
   return (
     <BentoCard className={cn("flex flex-col p-5", className)}>
       <div className="mb-3 flex items-start justify-between gap-3">
@@ -30,7 +38,8 @@ export function OrchestratorStatus({ className }: { className?: string }) {
 
       <ul className="space-y-1.5">
         {STAGES.map((stage) => {
-          const live = stage.status === "live";
+          const activity = stageActivity[stage.id];
+          const active = activity.runs > 0;
           return (
             <li
               key={stage.id}
@@ -40,19 +49,26 @@ export function OrchestratorStatus({ className }: { className?: string }) {
                 {String(stage.order).padStart(2, "0")}
               </span>
               <span className="font-medium">{stage.label}</span>
-              <span
-                className={cn(
-                  "ml-auto flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wider",
-                  live ? "text-okabe-green" : "text-muted-foreground",
+              <span className="ml-auto flex items-center gap-2 font-mono text-[10px] uppercase tracking-wider">
+                {active && (
+                  <span className="text-muted-foreground">
+                    {activity.runs}
+                  </span>
                 )}
-              >
                 <span
                   className={cn(
-                    "h-1.5 w-1.5 rounded-full",
-                    live ? "bg-okabe-green" : "bg-muted-foreground/50",
+                    "flex items-center gap-1.5",
+                    active ? "text-okabe-green" : "text-muted-foreground",
                   )}
-                />
-                {live ? "Operational" : "Planned"}
+                >
+                  <span
+                    className={cn(
+                      "h-1.5 w-1.5 rounded-full",
+                      active ? "bg-okabe-green" : "bg-muted-foreground/50",
+                    )}
+                  />
+                  {active ? "Operational" : "Idle"}
+                </span>
               </span>
             </li>
           );

@@ -1,5 +1,6 @@
 import { getCommandCenterData } from "@/lib/command-center/overview";
 import { KpiStrip } from "@/components/command-center/kpi-strip";
+import { PipelineOutputStrip } from "@/components/command-center/pipeline-output-strip";
 import { PipelineRiver } from "@/components/command-center/pipeline-river";
 import { IntelligenceSpotlight } from "@/components/command-center/intelligence-spotlight";
 import { SaifThreatLandscape } from "@/components/command-center/saif-threat-landscape";
@@ -33,7 +34,9 @@ export default async function CommandCenterPage() {
 
       <KpiStrip data={data} />
 
-      <PipelineRiver liveScenarioCount={data.counts.scenarios} />
+      <PipelineRiver stageActivity={data.stageActivity} />
+
+      <PipelineOutputStrip data={data} />
 
       <div className="grid gap-4 lg:grid-cols-3">
         <IntelligenceSpotlight
@@ -45,7 +48,7 @@ export default async function CommandCenterPage() {
           series={data.scenariosByDay}
           className="lg:col-span-2"
         />
-        <OrchestratorStatus />
+        <OrchestratorStatus stageActivity={data.stageActivity} />
       </div>
     </div>
   );

@@ -20,7 +20,7 @@ import {
   users,
 } from "./schema";
 import type { Capability, SaifControl } from "./capabilities";
-import { synthesizeScenario } from "../alchemy/synthesize";
+import { synthesizeStage } from "../pipeline/synthesize";
 import { ingestSource } from "../pipeline/ingest";
 import { extractFromIncident } from "../pipeline/extract";
 import { correlateIncident } from "../pipeline/correlate";
@@ -1249,15 +1249,11 @@ export async function seedDatabase(mode: "reset" | "once" = "reset") {
     console.log("Scenarios skipped: scenarios already exist.");
   }
 
-  const haveRuns = await db
-    .select({ id: agentRuns.id })
-    .from(agentRuns)
-    .limit(1);
-  if (haveRuns.length === 0) {
-    await seedPipelineRuns();
-  } else {
-    console.log("Pipeline runs skipped: agent_runs already exist.");
-  }
+  // seedPipelineRuns is safe to call every seed: runStage's idempotency
+  // key short-circuits each per-call invocation when an existing succeeded
+  // agent_runs row matches the input hash. On `reset` the agent_runs table
+  // was already wiped, so every call runs fresh.
+  await seedPipelineRuns();
 
   console.log("Seed complete.");
   return { skipped: haveTools.length > 0 };
@@ -1403,7 +1399,7 @@ async function seedScenarios() {
       continue;
     }
     try {
-      await synthesizeScenario(ids);
+      await synthesizeStage({ toolIds: ids });
       inserted++;
     } catch (err) {
       console.warn(

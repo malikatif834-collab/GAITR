@@ -1,11 +1,18 @@
-import { count, desc } from "drizzle-orm";
+import { count, desc, eq, max } from "drizzle-orm";
 import { db, tryDb } from "@/lib/db/client";
 import {
+  agentRuns,
   aiTools,
   alchemyScenarios,
+  attackFingerprints,
+  briefs,
   capabilitySynergies,
+  incidents,
+  saifControls,
+  saifMappings,
 } from "@/lib/db/schema";
 import { SAIF_CONTROLS, type SaifControl } from "@/lib/db/capabilities";
+import type { StageId } from "@/lib/pipeline/types";
 
 /**
  * Command Center read model. One round of queries, aggregated in JS — the
@@ -28,18 +35,49 @@ export interface SpotlightScenario {
   createdAt: string;
 }
 
+export interface StageActivity {
+  runs: number;
+  lastRunAt: string | null;
+}
+
+export type StageActivityMap = Record<StageId, StageActivity>;
+
 export interface CommandCenterData {
   databaseAvailable: boolean;
-  counts: { tools: number; synergies: number; scenarios: number };
+  counts: {
+    tools: number;
+    synergies: number;
+    scenarios: number;
+    incidents: number;
+    fingerprints: number;
+    mappings: number;
+    briefs: number;
+  };
   peakRisk: number;
   avgConfidence: number | null;
   saifDistribution: { control: SaifControl; count: number }[];
   recentScenarios: SpotlightScenario[];
   scenariosByDay: { date: string; count: number }[];
+  stageActivity: StageActivityMap;
 }
 
 const SPOTLIGHT_LIMIT = 5;
 const TREND_DAYS = 14;
+const STAGE_IDS: StageId[] = [
+  "ingest",
+  "extract",
+  "correlate",
+  "synthesize",
+  "map",
+  "report",
+];
+
+function zeroStageActivity(): StageActivityMap {
+  return STAGE_IDS.reduce<StageActivityMap>((acc, id) => {
+    acc[id] = { runs: 0, lastRunAt: null };
+    return acc;
+  }, {} as StageActivityMap);
+}
 
 export async function getCommandCenterData(): Promise<CommandCenterData> {
   const result = await tryDb(() =>
@@ -59,22 +97,63 @@ export async function getCommandCenterData(): Promise<CommandCenterData> {
       db
         .select({ riskMultiplier: capabilitySynergies.riskMultiplier })
         .from(capabilitySynergies),
+      db.select({ value: count() }).from(incidents),
+      db.select({ value: count() }).from(attackFingerprints),
+      db.select({ value: count() }).from(briefs),
+      db
+        .select({
+          category: saifControls.category,
+          c: count(),
+        })
+        .from(saifMappings)
+        .innerJoin(
+          saifControls,
+          eq(saifMappings.saifControlId, saifControls.id),
+        )
+        .groupBy(saifControls.category),
+      db
+        .select({
+          stageId: agentRuns.stageId,
+          runs: count(),
+          lastRunAt: max(agentRuns.completedAt),
+        })
+        .from(agentRuns)
+        .where(eq(agentRuns.status, "succeeded"))
+        .groupBy(agentRuns.stageId),
     ]),
   );
 
   if (result === null) {
     return {
       databaseAvailable: false,
-      counts: { tools: 0, synergies: 0, scenarios: 0 },
+      counts: {
+        tools: 0,
+        synergies: 0,
+        scenarios: 0,
+        incidents: 0,
+        fingerprints: 0,
+        mappings: 0,
+        briefs: 0,
+      },
       peakRisk: 0,
       avgConfidence: null,
       saifDistribution: SAIF_CONTROLS.map((control) => ({ control, count: 0 })),
       recentScenarios: [],
       scenariosByDay: bucketByDay([], TREND_DAYS),
+      stageActivity: zeroStageActivity(),
     };
   }
 
-  const [scenarioRows, toolCountRows, synergyRows] = result;
+  const [
+    scenarioRows,
+    toolCountRows,
+    synergyRows,
+    incidentCountRows,
+    fingerprintCountRows,
+    briefCountRows,
+    saifMappingByCategory,
+    agentRunsByStage,
+  ] = result;
 
   const peakRisk = synergyRows.length
     ? Math.max(...synergyRows.map((r) => Number(r.riskMultiplier)))
@@ -85,12 +164,26 @@ export async function getCommandCenterData(): Promise<CommandCenterData> {
       scenarioRows.length
     : null;
 
-  const saifDistribution = SAIF_CONTROLS.map((control) => ({
-    control,
-    count: scenarioRows.filter((r) =>
-      (r.saifControls as SaifControl[]).includes(control),
-    ).length,
-  }));
+  // Prefer live saif_mappings as the source of distribution (Phase 2 map
+  // stage output); fall back to scenario.saifControls if mappings are not
+  // yet present so the panel never blanks out.
+  const mappingsCount = saifMappingByCategory.reduce(
+    (sum, r) => sum + Number(r.c),
+    0,
+  );
+  const saifDistribution = mappingsCount > 0
+    ? SAIF_CONTROLS.map((control) => ({
+        control,
+        count: Number(
+          saifMappingByCategory.find((r) => r.category === control)?.c ?? 0,
+        ),
+      }))
+    : SAIF_CONTROLS.map((control) => ({
+        control,
+        count: scenarioRows.filter((r) =>
+          (r.saifControls as SaifControl[]).includes(control),
+        ).length,
+      }));
 
   const recentScenarios: SpotlightScenario[] = scenarioRows
     .slice(0, SPOTLIGHT_LIMIT)
@@ -103,12 +196,26 @@ export async function getCommandCenterData(): Promise<CommandCenterData> {
       createdAt: r.createdAt.toISOString(),
     }));
 
+  const stageActivity = zeroStageActivity();
+  for (const row of agentRunsByStage) {
+    const id = row.stageId as StageId;
+    if (!STAGE_IDS.includes(id)) continue;
+    stageActivity[id] = {
+      runs: Number(row.runs),
+      lastRunAt: row.lastRunAt ? row.lastRunAt.toISOString() : null,
+    };
+  }
+
   return {
     databaseAvailable: true,
     counts: {
       tools: toolCountRows[0]?.value ?? 0,
       synergies: synergyRows.length,
       scenarios: scenarioRows.length,
+      incidents: incidentCountRows[0]?.value ?? 0,
+      fingerprints: fingerprintCountRows[0]?.value ?? 0,
+      mappings: mappingsCount,
+      briefs: briefCountRows[0]?.value ?? 0,
     },
     peakRisk,
     avgConfidence,
@@ -118,6 +225,7 @@ export async function getCommandCenterData(): Promise<CommandCenterData> {
       scenarioRows.map((r) => r.createdAt),
       TREND_DAYS,
     ),
+    stageActivity,
   };
 }
 

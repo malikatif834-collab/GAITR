@@ -11,6 +11,10 @@ import {
   type NodeTypes,
 } from "@xyflow/react";
 import { STAGES, type PipelineStage } from "@/lib/command-center/pipeline";
+import type {
+  StageActivity,
+  StageActivityMap,
+} from "@/lib/command-center/overview";
 import { BentoCard } from "@/components/ui/bento-card";
 import { PipelineStageNode, type StageNode } from "./pipeline-stage-node";
 import { ParticleEdge } from "./particle-edge";
@@ -18,37 +22,43 @@ import { StageDetailDialog } from "./stage-detail-dialog";
 
 /* The pipeline river — the Command Center's hero surface (ADR 0003 D4).
    Six stage nodes, particle edges flowing source → target, click to drill in.
-   The diagram is fixed: nodes are not draggable and scroll stays with the
-   page; the only interaction is selecting a stage. */
+   Per-stage metric and operational status come from the live agent_runs
+   counts in `stageActivity`. */
 
 const nodeTypes: NodeTypes = { stage: PipelineStageNode };
 const edgeTypes: EdgeTypes = { particle: ParticleEdge };
 
 const COL_GAP = 248;
-const ROW_Y = [24, 132]; // gentle wave so the row reads as a flowing river
+const ROW_Y = [24, 132];
 
 export function PipelineRiver({
-  liveScenarioCount,
+  stageActivity,
 }: {
-  liveScenarioCount: number;
+  stageActivity: StageActivityMap;
 }) {
-  const [selected, setSelected] = useState<PipelineStage | null>(null);
+  const [selected, setSelected] = useState<
+    { stage: PipelineStage; activity: StageActivity } | null
+  >(null);
 
   const nodes = useMemo<StageNode[]>(
     () =>
-      STAGES.map((stage, i) => ({
-        id: stage.id,
-        type: "stage",
-        position: { x: i * COL_GAP, y: ROW_Y[i % 2] },
-        data: {
-          stage,
-          metric:
-            stage.id === "synthesize"
-              ? { value: String(liveScenarioCount), label: "scenarios" }
-              : null,
-        },
-      })),
-    [liveScenarioCount],
+      STAGES.map((stage, i) => {
+        const activity = stageActivity[stage.id];
+        return {
+          id: stage.id,
+          type: "stage",
+          position: { x: i * COL_GAP, y: ROW_Y[i % 2] },
+          data: {
+            stage,
+            metric:
+              activity.runs > 0
+                ? { value: String(activity.runs), label: stage.outputNoun }
+                : null,
+            activity,
+          },
+        };
+      }),
+    [stageActivity],
   );
 
   const edges = useMemo<Edge[]>(
@@ -63,7 +73,8 @@ export function PipelineRiver({
   );
 
   const onNodeClick = useCallback(
-    (_: MouseEvent, node: StageNode) => setSelected(node.data.stage),
+    (_: MouseEvent, node: StageNode) =>
+      setSelected({ stage: node.data.stage, activity: node.data.activity }),
     [],
   );
 
@@ -112,7 +123,11 @@ export function PipelineRiver({
         </ReactFlow>
       </div>
 
-      <StageDetailDialog stage={selected} onClose={() => setSelected(null)} />
+      <StageDetailDialog
+        stage={selected?.stage ?? null}
+        activity={selected?.activity ?? null}
+        onClose={() => setSelected(null)}
+      />
     </BentoCard>
   );
 }
