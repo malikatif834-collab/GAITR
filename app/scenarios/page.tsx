@@ -1,23 +1,30 @@
 import Link from "next/link";
 import { desc } from "drizzle-orm";
-import { db } from "@/lib/db/client";
+import { db, tryDb } from "@/lib/db/client";
 import { alchemyScenarios } from "@/lib/db/schema";
 import { Badge } from "@/components/ui/badge";
+import { BentoCard } from "@/components/ui/bento-card";
 import { SaifBadge } from "@/components/saif-badge";
+import { NoDatabaseBanner } from "@/components/no-database-banner";
 import type { SaifControl } from "@/lib/db/capabilities";
 
 export const dynamic = "force-dynamic";
 
 export default async function ScenariosPage() {
-  const rows = await db
-    .select()
-    .from(alchemyScenarios)
-    .orderBy(desc(alchemyScenarios.createdAt))
-    .limit(50);
+  const rows = await tryDb(() =>
+    db
+      .select()
+      .from(alchemyScenarios)
+      .orderBy(desc(alchemyScenarios.createdAt))
+      .limit(50),
+  );
+
+  const dbDown = rows === null;
+  const scenarios = rows ?? [];
 
   return (
-    <main className="container mx-auto max-w-4xl px-6 py-10">
-      <header className="mb-8 space-y-1">
+    <div className="mx-auto max-w-4xl space-y-6 px-6 py-10">
+      <header className="space-y-1">
         <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
           GAITR · Alchemy Engine
         </p>
@@ -25,28 +32,34 @@ export default async function ScenariosPage() {
           Recent scenarios
         </h1>
         <p className="text-sm text-muted-foreground">
-          {rows.length} scenario{rows.length === 1 ? "" : "s"} synthesized so far. Click any to inspect
-          the narrative, mitigations, and decision provenance.
+          {dbDown
+            ? "Scenario archive will populate once a database is attached."
+            : `${scenarios.length} scenario${scenarios.length === 1 ? "" : "s"} synthesized so far. Click any to inspect the narrative, mitigations, and decision provenance.`}
         </p>
       </header>
 
-      {rows.length === 0 ? (
+      {dbDown && <NoDatabaseBanner />}
+
+      {!dbDown && scenarios.length === 0 ? (
         <div className="rounded-md border border-dashed border-border p-12 text-center text-sm text-muted-foreground">
           No scenarios yet.{" "}
-          <Link href="/" className="font-medium text-foreground hover:underline">
+          <Link href="/alchemy" className="font-medium text-foreground hover:underline">
             Synthesize your first one →
           </Link>
         </div>
-      ) : (
+      ) : null}
+
+      {!dbDown && scenarios.length > 0 ? (
         <ul className="space-y-2">
-          {rows.map((s) => {
+          {scenarios.map((s) => {
             const saif = s.saifControls as SaifControl[];
             return (
               <li key={s.id}>
-                <Link
-                  href={`/scenarios/${s.id}`}
-                  className="block rounded-md border border-border bg-card p-4 transition-colors hover:border-foreground/30"
+                <BentoCard
+                  asChild
+                  className="block p-4 transition-colors hover:border-foreground/30"
                 >
+                  <Link href={`/scenarios/${s.id}`}>
                   <div className="flex items-baseline justify-between gap-3">
                     <h2 className="truncate text-sm font-medium">
                       {s.emergentCapabilities.join(" · ")}
@@ -66,12 +79,13 @@ export default async function ScenariosPage() {
                       confidence {Number(s.confidence).toFixed(2)}
                     </Badge>
                   </div>
-                </Link>
+                  </Link>
+                </BentoCard>
               </li>
             );
           })}
         </ul>
-      )}
-    </main>
+      ) : null}
+    </div>
   );
 }

@@ -24,20 +24,30 @@
     "@radix-ui/react-separator": "^1.1.8",
     "@radix-ui/react-slot": "^1.2.4",
     "@tanstack/react-query": "^5.100.10",
+    "@visx/gradient": "^3.12.0",
+    "@visx/group": "^3.12.0",
+    "@visx/responsive": "^3.12.0",
+    "@visx/scale": "^3.12.0",
+    "@visx/shape": "^3.12.0",
+    "@xyflow/react": "^12.10.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "d3": "^7.9.0",
     "drizzle-orm": "^0.45.2",
     "drizzle-zod": "^0.8.3",
     "lucide-react": "^1.14.0",
+    "motion": "^12.40.0",
     "next": "16.2.6",
     "postgres": "^3.4.9",
     "react": "19.2.4",
     "react-dom": "19.2.4",
+    "recharts": "^3.8.1",
     "tailwind-merge": "^3.6.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/d3": "^7.4.3",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
@@ -49,6 +59,11 @@
     "vitest": "^4.1.6"
   },
   "pnpm": {
-    "onlyBuiltDependencies": ["esbuild", "@tailwindcss/oxide", "sharp", "unrs-resolver"]
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "@tailwindcss/oxide",
+      "sharp",
+      "unrs-resolver"
+    ]
   }
 }

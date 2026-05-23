@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
-import { SiteNav } from "@/components/site-nav";
+import { AppShell } from "@/components/shell/app-shell";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Alchemy Engine — GAITR",
+  title: "GAITR — Global AI Threat Register",
   description:
     "Threat scenario synthesis from AI tool combinations, mapped to SAIF.",
 };
@@ -32,8 +32,7 @@ export default function RootLayout({
     >
       <body className="min-h-full bg-background text-foreground font-sans">
         <Providers>
-          <SiteNav />
-          {children}
+          <AppShell>{children}</AppShell>
         </Providers>
       </body>
     </html>
