@@ -1,6 +1,13 @@
+import { sql } from "drizzle-orm";
 import { db } from "./client";
-import { aiTools, capabilitySynergies } from "./schema";
+import {
+  aiTools,
+  alchemyScenarios,
+  capabilitySynergies,
+  decisionRecords,
+} from "./schema";
 import type { Capability, SaifControl } from "./capabilities";
+import { synthesizeScenario } from "../alchemy/synthesize";
 
 type SeedTool = {
   name: string;
@@ -395,52 +402,152 @@ const SYNERGIES: SeedSynergy[] = [
   },
 ];
 
+type SeedScenarioCombo = { toolNames: string[] };
+
 /**
- * Seed tools + synergies.
+ * Tool combinations used to seed Phase 1 demo scenarios. Each combo is
+ * picked to fire at least one synergy pattern; variety across the ten
+ * patterns is what fills out the SAIF radar and gives the Threat
+ * Analytics trend real shape (created_at is spread across the last 14
+ * days post-insert).
+ */
+const SCENARIO_COMBOS: SeedScenarioCombo[] = [
+  { toolNames: ["ElevenLabs", "ChatGPT"] },
+  { toolNames: ["PlayHT", "Claude"] },
+  { toolNames: ["ElevenLabs", "HeyGen", "D-ID"] },
+  { toolNames: ["Descript Overdub", "Runway", "DeepFaceLab"] },
+  { toolNames: ["Resemble AI", "Synthesia"] },
+  { toolNames: ["Devin"] },
+  { toolNames: ["Cursor", "AutoGPT"] },
+  { toolNames: ["Cursor", "Browser Use"] },
+  { toolNames: ["ChatGPT", "Browser Use"] },
+  { toolNames: ["Claude", "Manus"] },
+  { toolNames: ["ChatGPT", "Midjourney"] },
+  { toolNames: ["Gemini", "DALL-E 3"] },
+  { toolNames: ["Stable Diffusion", "ChatGPT"] },
+  { toolNames: ["ElevenLabs", "ChatGPT", "AutoGPT"] },
+  { toolNames: ["Suno", "ChatGPT", "Manus"] },
+  { toolNames: ["ChatGPT", "OpenAI Operator"] },
+  { toolNames: ["Claude", "Anthropic Computer Use"] },
+  { toolNames: ["Gemini", "Manus"] },
+];
+
+/**
+ * Seed tools, synergies, and demo scenarios — three independent
+ * idempotency blocks.
  *
- * @param mode "reset" deletes existing rows first (CLI default — clean
- *             reproducible state). "once" no-ops if any tool exists
- *             (used by the Vercel build hook so re-deploys don't wipe).
+ * @param mode "reset" wipes everything in FK-safe order, then re-inserts
+ *             (CLI default — clean reproducible state). "once" only
+ *             inserts what's missing, so re-deploys don't wipe and newer
+ *             seeds (Phase 1 scenarios) back-fill on the next deploy
+ *             without needing tools to be re-seeded.
  */
 export async function seedDatabase(mode: "reset" | "once" = "reset") {
-  if (mode === "once") {
-    const existing = await db.select({ id: aiTools.id }).from(aiTools).limit(1);
-    if (existing.length > 0) {
-      console.log("Seed skipped: %d+ tools already present.", existing.length);
-      return { skipped: true as const };
-    }
-  } else {
+  if (mode === "reset") {
+    // FK-safe order: scenarios reference decision records.
+    await db.delete(alchemyScenarios);
+    await db.delete(decisionRecords);
     await db.delete(capabilitySynergies);
     await db.delete(aiTools);
   }
 
-  console.log("Seeding %d tools and %d synergies...", TOOLS.length, SYNERGIES.length);
+  const haveTools = await db.select({ id: aiTools.id }).from(aiTools).limit(1);
+  if (haveTools.length === 0) {
+    console.log(
+      "Seeding %d tools and %d synergies...",
+      TOOLS.length,
+      SYNERGIES.length,
+    );
+    await db.insert(aiTools).values(
+      TOOLS.map((t) => ({
+        name: t.name,
+        vendor: t.vendor,
+        url: t.url,
+        description: t.description,
+        capabilities: t.capabilities,
+        sourceTrust: "seed",
+      })),
+    );
+    await db.insert(capabilitySynergies).values(
+      SYNERGIES.map((s) => ({
+        name: s.name,
+        requiredCapabilities: s.requiredCapabilities,
+        emergentThreat: s.emergentThreat,
+        riskMultiplier: String(s.riskMultiplier),
+        saifControls: s.saifControls,
+        rationale: s.rationale,
+        source: "curated",
+      })),
+    );
+  } else {
+    console.log(
+      "Tools + synergies skipped: %d+ tools already present.",
+      haveTools.length,
+    );
+  }
 
-  await db.insert(aiTools).values(
-    TOOLS.map((t) => ({
-      name: t.name,
-      vendor: t.vendor,
-      url: t.url,
-      description: t.description,
-      capabilities: t.capabilities,
-      sourceTrust: "seed",
-    })),
-  );
-
-  await db.insert(capabilitySynergies).values(
-    SYNERGIES.map((s) => ({
-      name: s.name,
-      requiredCapabilities: s.requiredCapabilities,
-      emergentThreat: s.emergentThreat,
-      riskMultiplier: String(s.riskMultiplier),
-      saifControls: s.saifControls,
-      rationale: s.rationale,
-      source: "curated",
-    })),
-  );
+  const haveScenarios = await db
+    .select({ id: alchemyScenarios.id })
+    .from(alchemyScenarios)
+    .limit(1);
+  if (haveScenarios.length === 0) {
+    await seedScenarios();
+  } else {
+    console.log("Scenarios skipped: scenarios already exist.");
+  }
 
   console.log("Seed complete.");
-  return { skipped: false as const };
+  return { skipped: haveTools.length > 0 };
+}
+
+/**
+ * Synthesize each SCENARIO_COMBO through the real Alchemy pipeline so
+ * every demo scenario gets a proper matched-pattern set plus a
+ * decision-record audit row. The stub provider is forced so seeding
+ * never spends Anthropic tokens, regardless of ALCHEMY_LLM_PROVIDER.
+ */
+async function seedScenarios() {
+  process.env.ALCHEMY_LLM_PROVIDER = "stub";
+
+  const tools = await db.select().from(aiTools);
+  const byName = new Map(tools.map((t) => [t.name, t.id] as const));
+
+  console.log("Seeding %d demo scenarios...", SCENARIO_COMBOS.length);
+
+  let inserted = 0;
+  for (const combo of SCENARIO_COMBOS) {
+    const ids = combo.toolNames
+      .map((n) => byName.get(n))
+      .filter((id): id is string => Boolean(id));
+    if (ids.length !== combo.toolNames.length) {
+      console.warn(
+        "  - skipping [%s]: unknown tool(s).",
+        combo.toolNames.join(", "),
+      );
+      continue;
+    }
+    try {
+      await synthesizeScenario(ids);
+      inserted++;
+    } catch (err) {
+      console.warn(
+        "  - combo [%s] failed: %s",
+        combo.toolNames.join(", "),
+        err instanceof Error ? err.message : String(err),
+      );
+    }
+  }
+
+  // Spread created_at across the last 14 days so the Threat Analytics
+  // trend shows real activity instead of a single seed-day spike.
+  // Scoping to all rows is safe here: this branch only runs when zero
+  // scenarios existed before.
+  await db.execute(
+    sql`UPDATE alchemy_scenarios
+        SET created_at = NOW() - (random() * INTERVAL '14 days')`,
+  );
+
+  console.log("  + scenarios seeded (%d) and backdated.", inserted);
 }
 
 async function main() {
