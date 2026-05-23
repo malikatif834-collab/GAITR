@@ -21,6 +21,11 @@ import {
 } from "./schema";
 import type { Capability, SaifControl } from "./capabilities";
 import { synthesizeScenario } from "../alchemy/synthesize";
+import { ingestSource } from "../pipeline/ingest";
+import { extractFromIncident } from "../pipeline/extract";
+import { correlateIncident } from "../pipeline/correlate";
+import { mapSubject } from "../pipeline/map";
+import { composeBrief } from "../pipeline/report";
 
 type SeedTool = {
   name: string;
@@ -1244,6 +1249,16 @@ export async function seedDatabase(mode: "reset" | "once" = "reset") {
     console.log("Scenarios skipped: scenarios already exist.");
   }
 
+  const haveRuns = await db
+    .select({ id: agentRuns.id })
+    .from(agentRuns)
+    .limit(1);
+  if (haveRuns.length === 0) {
+    await seedPipelineRuns();
+  } else {
+    console.log("Pipeline runs skipped: agent_runs already exist.");
+  }
+
   console.log("Seed complete.");
   return { skipped: haveTools.length > 0 };
 }
@@ -1409,6 +1424,65 @@ async function seedScenarios() {
   );
 
   console.log("  + scenarios seeded (%d) and backdated.", inserted);
+}
+
+/**
+ * Drive the five non-synthesize stages over the seeded data so the
+ * Command Center has live agent_runs / fingerprints / mappings / briefs
+ * to surface on the first request. Stub provider only — no Anthropic
+ * spend during seed.
+ */
+async function seedPipelineRuns() {
+  process.env.ALCHEMY_LLM_PROVIDER = "stub";
+
+  const sources = await db.select().from(sourceRegistry);
+  console.log("Pipeline: ingest over %d sources...", sources.length);
+  for (const s of sources) {
+    try {
+      await ingestSource(s.id);
+    } catch (err) {
+      console.warn(
+        "  ingest [%s] failed: %s",
+        s.name,
+        err instanceof Error ? err.message : String(err),
+      );
+    }
+  }
+
+  const incs = await db.select().from(incidents);
+  console.log(
+    "Pipeline: extract + correlate over %d incidents...",
+    incs.length,
+  );
+  for (const inc of incs) {
+    try {
+      await extractFromIncident(inc.id);
+      await correlateIncident(inc.id);
+    } catch (err) {
+      console.warn(
+        "  extract/correlate [%s] failed: %s",
+        inc.title.slice(0, 40),
+        err instanceof Error ? err.message : String(err),
+      );
+    }
+  }
+
+  const scens = await db.select().from(alchemyScenarios);
+  console.log("Pipeline: map + report over %d scenarios...", scens.length);
+  for (const sc of scens) {
+    try {
+      await mapSubject({ kind: "scenario", id: sc.id });
+      await composeBrief({ kind: "scenario", id: sc.id });
+    } catch (err) {
+      console.warn(
+        "  map/report [%s] failed: %s",
+        sc.id.slice(0, 8),
+        err instanceof Error ? err.message : String(err),
+      );
+    }
+  }
+
+  console.log("  + pipeline runs seeded.");
 }
 
 async function main() {
